@@ -33,16 +33,17 @@ These are
 
 There are four **ejs** template files, all located in `/view/articles/` directory. They are:
 
-1. `index.ejs` display of all articles
+1. `index.ejs` display all articles, first read them from MongoDB
 2. `edit.ejs` edit form for an existing article - form is submited to route `/articles/` **POST**
-3. `new.ejs` edit fomm for a new article - form is submitted to route `/articles/:id` **PUT**
+3. `new.ejs` edit form for a new article - form is submitted to route `/articles/:id` **PUT**
 4. `show.ejs` display of one article
 
 ## Workflows
 
 1. **Display all articles**: Either navigate in the browser to `"/"` or press the `All Articles` button in the `/articles/:slug` route
 2. **Add a new article**: Press the `New Article` in the `"/"` screen
-3. **Edit an existing Article**
+3. **Edit an existing Article** Press the `More details...` button on the home page for the article you want to change. Then press `Edit `button. Make the changes and press `Save`
+4. **Delete an existing Article** Press the `Delete` button on the home page for the article you want to delete.
 
 ## Version 2 Changes
 
@@ -53,4 +54,6 @@ There are four **ejs** template files, all located in `/view/articles/` director
 5. Allow visitors to add comments to posts
 6. Add a nav bar with a Home Page and About Page
 7. Make the site responsive (maybe)
-8. Figure out how to deploy
+8. Figure out how to deploy and do it
+9. Stop saving the HTML in the database, instead use mardown-it to generate it on the fly
+10. Add a `publish` status/workflow so that only published blogs can be seen by visitors
