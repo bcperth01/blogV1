@@ -48,7 +48,7 @@ There are four **ejs** template files, all located in `/view/articles/` director
 ## Version 2 Changes
 
 1. Add a user login so that only admin users can create, edit or delete posts
-2. Change to using `markdown-it` library rather than `marked` becasue its newer.
+2. Change to using `markdown-it` library rather than `marked` .... its more active and current.
 3. Add code highlighting - using the highlight.js package.
 4. Change the db to Ingres and add full text search.
 5. Allow visitors to add comments to posts
@@ -57,3 +57,4 @@ There are four **ejs** template files, all located in `/view/articles/` director
 8. Figure out how to deploy and do it
 9. Stop saving the HTML in the database, instead use mardown-it to generate it on the fly
 10. Add a `publish` status/workflow so that only published blogs can be seen by visitors
+11. Make sure it has appriate SEO elements
