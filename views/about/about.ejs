@@ -14,17 +14,12 @@
       integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
       crossorigin="anonymous"
     ></script>
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Edit</title>
+    <title>ABout</title>
   </head>
   <body>
     <div class="container">
       <%- include('../components/header') %>
-      <h1 class="mb-4">Edit Article</h1>
-
-      <form action="/articles/<%= article.id %>?_method=PUT" method="POST">
-        <%- include('_form_fields') %>
-      </form>
+      <h1>This is the About page</h1>
     </div>
   </body>
 </html>

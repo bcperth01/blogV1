@@ -50,7 +50,7 @@ There are four **ejs** template files, all located in `/view/articles/` director
 1. Add a user login so that only admin users can create, edit or delete posts
 2. Change to using `markdown-it` library rather than `marked` .... its more active and current.
 3. Add code highlighting - using the highlight.js package.
-4. Change the db to Ingres and add full text search.
+4. Change the db to Postgres and add full text search.
 5. Allow visitors to add comments to posts
 6. Add a nav bar with a Home Page and About Page
 7. Make the site responsive (maybe)

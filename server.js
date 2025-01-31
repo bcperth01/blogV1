@@ -1,6 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 import articlesRouter from "./routes/articles.js";
+import path from "path";
 import Article from "./models/article.js";
 import methodOverride from "method-override";
 
@@ -15,6 +16,9 @@ app.use(express.urlencoded({ extended: false })); // extracts the body to make i
 
 app.use(methodOverride("_method")); // the string we use to indicate the desired method (that is not native to Form submit)
 
+// see https://expressjs.com/en/starter/static-files.html Serving static files in Express
+app.use(express.static("public")); // this is so that public assets are found
+
 // creates a route to "/articles" - allows to create a subdirectory /articles where all /articles/routes are defined an maintained
 app.use("/articles", articlesRouter);
 
@@ -22,6 +26,11 @@ app.use("/articles", articlesRouter);
 app.get("/", async (req, res) => {
   const articles = await Article.find().sort({ createdAt: "desc" });
   res.render("articles/index", { articles: articles }); // Note: res.render NOT res.send - will render "/views/articles/index.ejs"
+});
+
+app.get("/about", async (req, res) => {
+  // const articles = await Article.find().sort({ createdAt: "desc" });
+  res.render("about/about"); // Note: res.render NOT res.send - will render "/views/about/about.ejs"
 });
 
 app.listen(5001);
