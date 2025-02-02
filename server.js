@@ -1,7 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 import articlesRouter from "./routes/articles.js";
-import path from "path";
+import path from "path"; // uninstall this if not being used.
 import Article from "./models/article.js";
 import methodOverride from "method-override";
 
@@ -16,8 +16,8 @@ app.use(express.urlencoded({ extended: false })); // extracts the body to make i
 
 app.use(methodOverride("_method")); // the string we use to indicate the desired method (that is not native to Form submit)
 
+app.use(express.static("public")); // this is so that public assets are found, like the svg in the nav basr
 // see https://expressjs.com/en/starter/static-files.html Serving static files in Express
-app.use(express.static("public")); // this is so that public assets are found
 
 // creates a route to "/articles" - allows to create a subdirectory /articles where all /articles/routes are defined an maintained
 app.use("/articles", articlesRouter);

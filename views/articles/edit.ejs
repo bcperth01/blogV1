@@ -14,17 +14,30 @@
       integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
       crossorigin="anonymous"
     ></script>
+    <link type="text/css" href="/styles/github-dark.min.css" rel="stylesheet" />
+    <link
+      type="text/css"
+      href="/styles/editTemplate/style.css"
+      rel="stylesheet"
+    />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>Edit</title>
   </head>
   <body>
     <div class="container">
       <%- include('../components/header') %>
-      <h1 class="mb-4">Edit Article</h1>
-
-      <form action="/articles/<%= article.id %>?_method=PUT" method="POST">
-        <%- include('_form_fields') %>
-      </form>
+      <div class="row">
+        <div class="col leftside">
+          <h1 class="mb-4">Edit Article Form...</h1>
+          <form action="/articles/<%= article.id %>?_method=PUT" method="POST">
+            <%- include('_form_fields') %>
+          </form>
+        </div>
+        <div class="col rightside">
+          <h2 class="mb-4">Preview</h2>
+          <div class="border"><%-article.sanitisedHtml%></div>
+        </div>
+      </div>
     </div>
   </body>
 </html>

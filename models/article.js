@@ -33,24 +33,24 @@ const articleSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
-  sanitisedHtml: {
-    type: String,
-    required: true,
-  },
+  // sanitisedHtml: {
+  //   type: String,
+  //   required: true,
+  // },
 });
 
-// populates the slug attribute
-articleSchema.pre("validate", function (next) {
-  if (this.title) {
-    this.slug = slugify(this.title, {
-      lower: true,
-      strict: true,
-    });
-  }
-  if (this.markdown) {
-    this.sanitisedHtml = dompurify.sanitize(marked(this.markdown));
-  }
-  next();
-});
+// // populates the slug attribute
+// articleSchema.pre("validate", function (next) {
+//   if (this.title) {
+//     this.slug = slugify(this.title, {
+//       lower: true,
+//       strict: true,
+//     });
+//   }
+//   if (this.markdown) {
+//     this.sanitisedHtml = dompurify.sanitize(marked(this.markdown));
+//   }
+//   next();
+// });
 
 export default mongoose.model("article", articleSchema);

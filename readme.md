@@ -17,26 +17,41 @@ It's a 100% Express Server web server. It talks to a MongoDB server that's runni
 
 It based closely on this tutorial. [How To Build A Markdown Blog Using Node.js, Express, And MongoDB](https://www.youtube.com/watch?v=1NrHkjlWVhM) by "Web Dev Simplified"
 
-The server has only one top level route `"/"` that reads all of the articles (blog posts) and renders them using and **ejs** template file at `views/artcicles/index.ejs`.
+Routes are:
 
-The server has multiple sub routes under `/articles`.
-These are
-
-1. `/articles/` **POST** to save a new article
-2. `/articles/:id` **PUT** to save an edited article by id
-3. `/articles/:id` **DELETE** to delete an article by id
-4. `/articles/:slug` **GET** to find and display an article by its slug (slugified title)
-5. `/articles/new` **GET** render a from to enter a new article
-6. `/articles/edit/:slug` **GET** Locate an article by slug and display in the edit form
+1.  `/` **GET** Reads all articles and renders them with the **index** template
+2.  `/articles/` **POST** Saves a new article, parses the markdown and renders the **Edit**template
+3.  `/articles/:id` **PUT** Saves an existing article, then parses the markdown and renders the **Edit** template
+4.  `/articles/:id` **DELETE** Deletes an article by id, the redirect to Home ("/")
+5.  `/articles/:slug` **GET** Finds an article by its slug, parses the markdown and renders the **Show**template
+6.  `/articles/new` **GET** Creates a new blank article and renders the **New**template
+7.  `/articles/edit/:slug` **GET** Locate an article by slug, parses the markdown and renders the **Edit** template
 
 ## EJS Template Files
 
 There are four **ejs** template files, all located in `/view/articles/` directory. They are:
 
-1. `index.ejs` display all articles, first read them from MongoDB
-2. `edit.ejs` edit form for an existing article - form is submited to route `/articles/` **POST**
-3. `new.ejs` edit form for a new article - form is submitted to route `/articles/:id` **PUT**
-4. `show.ejs` display of one article
+1. **index.ejs** Display all articles.\
+   `New Article` button redirects to `/articles/new` **GET**\
+   In each displayed article\
+    `Read More..` button redirects to `/articles/:slug` **GET**\
+   `Edit` button redirects to `/articles/edit/:slug` **GET**\
+   `Delete` button redirects to `/articles/:id` **DELETE**\
+2. **edit.ejs** Display 2 panes: Edit Form for an existing article and a Preview of the markup
+   The `edit` template imports the `_form_fields` partial template\
+   The form is submitted to `/articles/:id` **PUT**\
+    `_form_fields` has:\
+    `Save` button of `type submit` which submits the form as above\
+    ``Exit without Save` button which redirects to `/` **GET**\
+3. **new.ejs** Display edit form for a new article \
+   The `new` template imports the `_form_fields` partial template\
+   The form is submitted to `/articles/` **POST**\
+    `_form_fields` has:\
+    `Save` button of `type submit` which submits the form as above \
+    `Exit without Save` button which redirects to `/` **GET**\
+4. **show.ejs** displays one article\
+   `All Articles` button redirects to `/` **GET**\
+   `Edit` button rediects to `/articles/edit/:slug` **GET**
 
 ## Workflows
 
@@ -48,13 +63,19 @@ There are four **ejs** template files, all located in `/view/articles/` director
 ## Version 2 Changes
 
 1. Add a user login so that only admin users can create, edit or delete posts
-2. Change to using `markdown-it` library rather than `marked` .... its more active and current.
-3. Add code highlighting - using the highlight.js package.
-4. Change the db to Postgres and add full text search.
+2. **(Done)**Change to using `markdown-it` library rather than `marked` .... its more active and current.
+3. **(Done)**Add code highlighting - using the highlight.js package.
+4. Change the db to Postgres and\
+   add full text search.
 5. Allow visitors to add comments to posts
-6. Add a nav bar with a Home Page and About Page
+6. **(Done)** Add a nav bar with a Home Page and About Page
 7. Make the site responsive (maybe)
 8. Figure out how to deploy and do it
-9. Stop saving the HTML in the database, instead use mardown-it to generate it on the fly
+9. **(Done)** Remove sanitiseHTML attribute from the model - ie no longer to be in the Mongo table\
+   Instead calculate it on the fly for the "show" template.
 10. Add a `publish` status/workflow so that only published blogs can be seen by visitors
 11. Make sure it has appriate SEO elements
+12. **(Done)** Remove the "validate" middleware from the model and create the slug and sanitisedHtml in the route as needed.
+    **(Done)** Remove the middleware implementation of the save function for both new and update API's - it was hard to understand
+13. **(Done)** Split the screen when displaying the edit template to allow a preview of the markup being entered
+14. **(Done)**Stop the Previw pane from growing in width ffor long text lines
