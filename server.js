@@ -91,7 +91,6 @@ app.get("/", async (req, res) => {
   // const articles = await Article.find().sort({ createdAt: "desc" });
   try {
     const result = await pg_pool.query("SELECT * from articles");
-    console.log(result.rows[0]);
     res.render("articles/index", { articles: result.rows });
   } catch (err) {
     console.log(err);

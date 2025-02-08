@@ -75,102 +75,61 @@ const md = markdownit({
 
 const router = express.Router();
 
+let blankArticle = {
+  //id                  uuid PRIMARY KEY DEFAULT uuid_generate_v4(),\
+  title: "",
+  slug: "",
+  tag_list: "",
+  description: "",
+  markdown: "",
+  vector_to_search: null,
+  published: false,
+  // created_at: "",
+  // updated_at: "",
+  user_id: "23cd2fbe-5b1c-4b38-808b-9d9168c2e4be",
+};
+
 // Reach here with /articles/new
 router.get("/new", (req, res) => {
-  res.render("articles/new", { article: new Article() }); // renders "/views/articles/new.ejs" - the new article form
+  res.render("articles/new", { article: { ...blankArticle } }); // renders "/views/articles/new.ejs" - the new article form
 });
 
 // Reach here on "new form" submission. POST to /articles/ to save a new article
 // On form submission, req.body will contain the form contents
 router.post("/", async (req, res) => {
-  let article = new Article({
-    title: req.body.title.trim(),
-    description: req.body.description.trim(),
-    markdown: req.body.markdown.trim(),
-    slug: slugify(req.body.title, {
-      lower: true,
-      strict: true,
-    }),
+  console.log("req.body", req.body);
+  let newArticle = { ...blankArticle };
+  newArticle.title = req.body.title.trim();
+  newArticle.description = req.body.description.trim();
+  newArticle.markdown = req.body.markdown.trim();
+  newArticle.slug = slugify(req.body.title, {
+    lower: true,
+    strict: true,
   });
+  console.log("newArticle", newArticle);
   try {
-    article = await article.save();
-    article.sanitisedHtml = dompurify.sanitize(
-      md.render(article.markdown.trim())
+    const result = await pg_pool.query(
+      `INSERT INTO articles \
+          (title, slug ,tag_list, description, markdown, published,user_id)\
+       VALUES ('${newArticle.title}','${newArticle.slug}','${newArticle.tag_list}','${newArticle.description}',\
+               '${newArticle.markdown}','${newArticle.published}','${newArticle.user_id}')`
     );
-    res.render(`articles/edit`, { article }); // for now continue editing until Cancel or Done pressed
-  } catch (error) {
-    res.render("articles/new", { article }); // renders "/views/articles/new.ejs" - the new article form, which should show the values already entered
-  }
-});
+    console.log("Result", result);
 
-router.post("/addArticle", async (req, res) => {
-  let article = {
-    title: "Article 3",
-    description: "This is article 3 Description",
-    markdown: "## Article 3 heading",
-    slug: slugify("Article 2", {
-      lower: true,
-      strict: true,
-    }),
-    user_id: "23cd2fbe-5b1c-4b38-808b-9d9168c2e4be",
-    published: false,
-    tag_list: "abc,def,ghi",
-  };
-  try {
-    let result = await addArticle(article);
-    console.log("result", result.command);
-    res.send({
-      article,
-    });
-  } catch (error) {
-    res.send(error);
-  }
-});
-
-// get all articles for a given user-id
-router.get("/getArticlesByUserID", async (req, res) => {
-  try {
-    let response = await pg_pool.query(
-      `Select * from  articles where user_id = '23cd2fbe-5b1c-4b38-808b-9d9168c2e4be'`
+    newArticle.sanitisedHtml = dompurify.sanitize(
+      md.render(newArticle.markdown.trim())
     );
-    res.send(response.rows);
+    res.render(`articles/edit`, { article: newArticle }); // for now continue editing until Cancel or Done pressed
   } catch (error) {
-    console.log("error getting articles by user_id", error.message);
-    res.send("error getting articles by user_id");
+    console.log("error", error);
+    res.render("articles/new", { article: newArticle }); // renders "/views/articles/new.ejs" - the new article form, which should show the values already entered
   }
 });
 
-// This is a brute force update - ie updating all editable fields, whether changed or not
-router.put("/updateArticle", async (req, res) => {
-  let article = {
-    title: "Article 3a",
-    description: "This is article 3a Description",
-    markdown: "## Article 3a heading",
-    slug: slugify("Article 3a", {
-      lower: true,
-      strict: true,
-    }),
-    user_id: "23cd2fbe-5b1c-4b38-808b-9d9168c2e4be",
-    published: true,
-    tag_list: "abc,def,ghi",
-  };
-  try {
-    let result = await pg_pool.query(
-      `INSERT INTO users (first_name, last_name,email, member_type)\
-            VALUES ('${user.firstName}', '${user.lastName}', '${user.email}','${user.memberType}')`
-    );
-    return result;
-  } catch (error) {
-    console.log("error inserting user", error.message);
-    return "error inserting user";
-  }
-});
-
-// Reach here via the edit form submission. Does a PUT to /articles/:id to update an existing article
+// Converted to Postgres - Reach here via the edit form submission.
+// Does a PUT to /articles/:id to update an existing article
 // On form submission, req.body will contain the form contents
 router.put("/:id", async (req, res, next) => {
-  //let articleToBeUpdated = await Article.findById(req.params.id);
-
   try {
     const result = await pg_pool.query(
       `SELECT * from articles WHERE id ='${req.params.id}'`
@@ -202,9 +161,8 @@ router.put("/:id", async (req, res, next) => {
   }
 });
 
-// Delete an article from the Home page list
+// Converted to Postgres - Delete an article from the Home page list
 router.delete("/:id", async (req, res) => {
-  console.log(req.params);
   try {
     let response = await pg_pool.query(
       `DELETE FROM articles WHERE id = '${req.params.id}'`
@@ -216,7 +174,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// Display and article in details by pressing "Read More..""
+// Converted to Postgres - Display and article in details by pressing "Read More..""
 router.get("/:slug", async (req, res) => {
   try {
     const result = await pg_pool.query(
@@ -233,7 +191,7 @@ router.get("/:slug", async (req, res) => {
   }
 });
 
-// Reach here with /articles/edit/slug
+// Converted to Postgres - Reach here with /articles/edit/slug
 router.get("/edit/:slug", async (req, res) => {
   // const article = await Article.findOne({ slug: req.params.slug });
   try {
@@ -248,6 +206,72 @@ router.get("/edit/:slug", async (req, res) => {
     res.render("articles/edit", { article });
   } catch (err) {
     console.log(err);
+  }
+});
+
+/**
+ * ************************tuff under developmenet to be deleted ************************
+ */
+// This is wrongly named
+router.put("/updateArticle", async (req, res) => {
+  let article = {
+    title: "Article 3a",
+    description: "This is article 3a Description",
+    markdown: "## Article 3a heading",
+    slug: slugify("Article 3a", {
+      lower: true,
+      strict: true,
+    }),
+    user_id: "23cd2fbe-5b1c-4b38-808b-9d9168c2e4be",
+    published: true,
+    tag_list: "abc,def,ghi",
+  };
+  try {
+    let result = await pg_pool.query(
+      `INSERT INTO users (first_name, last_name,email, member_type)\
+            VALUES ('${user.firstName}', '${user.lastName}', '${user.email}','${user.memberType}')`
+    );
+    return result;
+  } catch (error) {
+    console.log("error inserting user", error.message);
+    return "error inserting user";
+  }
+});
+
+// get all articles for a given user-id
+router.get("/getArticlesByUserID", async (req, res) => {
+  try {
+    let response = await pg_pool.query(
+      `Select * from  articles where user_id = '23cd2fbe-5b1c-4b38-808b-9d9168c2e4be'`
+    );
+    res.send(response.rows);
+  } catch (error) {
+    console.log("error getting articles by user_id", error.message);
+    res.send("error getting articles by user_id");
+  }
+});
+
+router.post("/addArticle", async (req, res) => {
+  let article = {
+    title: "Article 3",
+    description: "This is article 3 Description",
+    markdown: "## Article 3 heading",
+    slug: slugify("Article 2", {
+      lower: true,
+      strict: true,
+    }),
+    user_id: "23cd2fbe-5b1c-4b38-808b-9d9168c2e4be",
+    published: false,
+    tag_list: "abc,def,ghi",
+  };
+  try {
+    let result = await addArticle(article);
+    console.log("result", result.command);
+    res.send({
+      article,
+    });
+  } catch (error) {
+    res.send(error);
   }
 });
 
