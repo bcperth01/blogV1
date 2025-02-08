@@ -11,6 +11,9 @@ import javascript from "highlight.js/lib/languages/javascript"; //Warning: This 
 // see documentation for dompurify
 import createDomPurify from "dompurify";
 import { JSDOM } from "jsdom";
+import { addArticle } from "../pgQueries/queries.js";
+import pg_pool from "../pgQueries/connectPool.js";
+
 const dompurify = createDomPurify(new JSDOM().window);
 
 hljs.registerLanguage("javascript", javascript);
@@ -97,6 +100,69 @@ router.post("/", async (req, res) => {
     res.render(`articles/edit`, { article }); // for now continue editing until Cancel or Done pressed
   } catch (error) {
     res.render("articles/new", { article }); // renders "/views/articles/new.ejs" - the new article form, which should show the values already entered
+  }
+});
+
+router.post("/addArticle", async (req, res) => {
+  let article = {
+    title: "Article 3",
+    description: "This is article 3 Description",
+    markdown: "## Article 3 heading",
+    slug: slugify("Article 2", {
+      lower: true,
+      strict: true,
+    }),
+    user_id: "23cd2fbe-5b1c-4b38-808b-9d9168c2e4be",
+    published: false,
+    tag_list: "abc,def,ghi",
+  };
+  try {
+    let result = await addArticle(article);
+    console.log("result", result.command);
+    res.send({
+      article,
+    });
+  } catch (error) {
+    res.send(error);
+  }
+});
+
+// get all articles for a given user-id
+router.get("/getArticlesByUserID", async (req, res) => {
+  try {
+    let response = await pg_pool.query(
+      `Select * from  articles where user_id = '23cd2fbe-5b1c-4b38-808b-9d9168c2e4be'`
+    );
+    res.send(response.rows);
+  } catch (error) {
+    console.log("error getting articles by user_id", error.message);
+    res.send("error getting articles by user_id");
+  }
+});
+
+// This is a brute force update - ie updating all editable fields, whether changed or not
+router.put("/updateArticle", async (req, res) => {
+  let article = {
+    title: "Article 3a",
+    description: "This is article 3a Description",
+    markdown: "## Article 3a heading",
+    slug: slugify("Article 3a", {
+      lower: true,
+      strict: true,
+    }),
+    user_id: "23cd2fbe-5b1c-4b38-808b-9d9168c2e4be",
+    published: true,
+    tag_list: "abc,def,ghi",
+  };
+  try {
+    let result = await pg_pool.query(
+      `INSERT INTO users (first_name, last_name,email, member_type)\
+            VALUES ('${user.firstName}', '${user.lastName}', '${user.email}','${user.memberType}')`
+    );
+    return result;
+  } catch (error) {
+    console.log("error inserting user", error.message);
+    return "error inserting user";
   }
 });
 

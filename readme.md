@@ -74,8 +74,24 @@ There are four **ejs** template files, all located in `/view/articles/` director
 9. **(Done)** Remove sanitiseHTML attribute from the model - ie no longer to be in the Mongo table\
    Instead calculate it on the fly for the "show" template.
 10. Add a `publish` status/workflow so that only published blogs can be seen by visitors
-11. Make sure it has appriate SEO elements
+11. Make sure it has appropiate SEO elements
 12. **(Done)** Remove the "validate" middleware from the model and create the slug and sanitisedHtml in the route as needed.
     **(Done)** Remove the middleware implementation of the save function for both new and update API's - it was hard to understand
 13. **(Done)** Split the screen when displaying the edit template to allow a preview of the markup being entered
 14. **(Done)**Stop the Previw pane from growing in width ffor long text lines
+
+## Item 4 in Detail - Switch over to Postgres
+
+The reason is to gain access to Postgres fule search text capabilities.
+We will not use an ORM to see how complicated things are with an "all SQL"
+solution. We will assess the benefits of later adopting an ORM - like Sequelise
+The model is also extended to include 3 tables: users, articles and comments
+A user can have many articles 1:N
+A user can have many comments 1:N
+An article can have many comments 1:N
+
+1. **(Done)** Set up an postgres container
+2. **(Done)** Install PGAdmin, connect to postgres and test out some queries
+3. **(Done)** Install the pg node library and set up a connection to postgres
+4. **(Done)** Create and test routes to create/destroy the 3 tables and their relationships to enforce referential integrity - ie child records must point to valid parents.
+5. Create queries to add records to each of the three tables taking into account the fireign key references.
