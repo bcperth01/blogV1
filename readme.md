@@ -94,4 +94,8 @@ An article can have many comments 1:N
 2. **(Done)** Install PGAdmin, connect to postgres and test out some queries
 3. **(Done)** Install the pg node library and set up a connection to postgres
 4. **(Done)** Create and test routes to create/destroy the 3 tables and their relationships to enforce referential integrity - ie child records must point to valid parents.
-5. Create queries to add records to each of the three tables taking into account the fireign key references.
+5. **(In Progress)** Create queries to add records to each of the three tables taking into account the foreign key references.
+6. **In Progress** Change all routes to use Postgres for all CRUD operations on Articles (Insert, Select, Update, Delete)\
+    todo - the INSERT route for a new article
+7. Add an error page
+8. Update all routes to use the error page

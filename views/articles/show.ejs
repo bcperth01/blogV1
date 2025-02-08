@@ -23,7 +23,7 @@
       <%- include('../components/header') %>
       <h1 class="mb-1"><%= article.title %></h1>
       <div class="text-muted mb-2">
-        <%= article.createdAt.toLocaleDateString() %>
+        <%= article.created_at.toLocaleDateString() %>
       </div>
       <a href="/" class="btn btn-secondary">All Articles</a>
       <a href="/articles/edit/<%=article.slug%>" class="btn btn-info">Edit</a>

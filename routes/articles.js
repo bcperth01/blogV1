@@ -169,52 +169,86 @@ router.put("/updateArticle", async (req, res) => {
 // Reach here via the edit form submission. Does a PUT to /articles/:id to update an existing article
 // On form submission, req.body will contain the form contents
 router.put("/:id", async (req, res, next) => {
-  let articleToBeUpdated = await Article.findById(req.params.id);
-  const slug = slugify(req.body.title, {
-    lower: true,
-    strict: true,
-  });
-
-  articleToBeUpdated.title = req.body.title.trim();
-  articleToBeUpdated.description = req.body.description.trim();
-  articleToBeUpdated.markdown = req.body.markdown.trim();
-  articleToBeUpdated.slug = slug;
+  //let articleToBeUpdated = await Article.findById(req.params.id);
 
   try {
-    let article = await articleToBeUpdated.save();
-    //res.redirect(`/articles/${article.slug}`);
-    article.sanitisedHtml = dompurify.sanitize(
-      md.render(article.markdown.trim())
+    const result = await pg_pool.query(
+      `SELECT * from articles WHERE id ='${req.params.id}'`
     );
-    res.render(`articles/edit`, { article: articleToBeUpdated }); // for now continue editing until Cancel or Done pressed
-  } catch (e) {
-    res.render(`articles/edit`, { article: articleToBeUpdated });
+    if (result.rows.length === 0) res.redirect("/");
+    let editedArticle = { ...result.rows[0] }; // The current state of the record in Postgres
+    ///Now change the fields that could have been edited and their derived fields
+    editedArticle.sanitisedHtml = dompurify.sanitize(
+      md.render(req.body.markdown.trim())
+    );
+    editedArticle.slug = slugify(req.body.title, {
+      lower: true,
+      strict: true,
+    });
+    editedArticle.title = req.body.title.trim();
+    editedArticle.description = req.body.description.trim();
+    editedArticle.markdown = req.body.markdown.trim();
+    // save the changes
+    const saveResult = await pg_pool.query(
+      `UPDATE articles \
+         SET slug = '${editedArticle.slug}', title = '${editedArticle.title}',\
+             description = '${editedArticle.description}', markdown = '${editedArticle.markdown}'\
+         WHERE id ='${req.params.id}'`
+    );
+
+    res.render("articles/edit", { article: editedArticle });
+  } catch (err) {
+    console.log(err);
   }
 });
 
+// Delete an article from the Home page list
 router.delete("/:id", async (req, res) => {
-  await Article.findByIdAndDelete(req.params.id);
-  res.redirect("/");
+  console.log(req.params);
+  try {
+    let response = await pg_pool.query(
+      `DELETE FROM articles WHERE id = '${req.params.id}'`
+    );
+    res.redirect("/");
+  } catch (error) {
+    console.log("error deleting article by id", error.message);
+    res.redirect("/");
+  }
 });
 
-// Reach here with /articles/slug
+// Display and article in details by pressing "Read More..""
 router.get("/:slug", async (req, res) => {
-  const article = await Article.findOne({ slug: req.params.slug });
-  if (article == null) res.redirect("/");
-  article.sanitisedHtml = dompurify.sanitize(
-    md.render(article.markdown.trim())
-  );
-  res.render("articles/show", { article }); // renders "/views/articles/show.ejs" - to show the current article
+  try {
+    const result = await pg_pool.query(
+      `SELECT * from articles where slug ='${req.params.slug}'`
+    );
+    if (result.rows.length === 0) res.redirect("/");
+    let article = result.rows[0];
+    article.sanitisedHtml = dompurify.sanitize(
+      md.render(article.markdown.trim())
+    );
+    res.render("articles/show", { article });
+  } catch (err) {
+    console.log(err);
+  }
 });
 
 // Reach here with /articles/edit/slug
 router.get("/edit/:slug", async (req, res) => {
-  const article = await Article.findOne({ slug: req.params.slug });
-  if (article == null) res.redirect("/");
-  article.sanitisedHtml = dompurify.sanitize(
-    md.render(article.markdown.trim())
-  );
-  res.render("articles/edit", { article });
+  // const article = await Article.findOne({ slug: req.params.slug });
+  try {
+    const result = await pg_pool.query(
+      `SELECT * from articles where slug ='${req.params.slug}'`
+    );
+    if (result.rows.length === 0) res.redirect("/");
+    let article = result.rows[0];
+    article.sanitisedHtml = dompurify.sanitize(
+      md.render(article.markdown.trim())
+    );
+    res.render("articles/edit", { article });
+  } catch (err) {
+    console.log(err);
+  }
 });
 
 export default router;

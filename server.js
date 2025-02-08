@@ -88,8 +88,14 @@ app.get("/getAllUsers", async (req, res) => {
 
 // Home route
 app.get("/", async (req, res) => {
-  const articles = await Article.find().sort({ createdAt: "desc" });
-  res.render("articles/index", { articles: articles }); // Note: res.render NOT res.send - will render "/views/articles/index.ejs"
+  // const articles = await Article.find().sort({ createdAt: "desc" });
+  try {
+    const result = await pg_pool.query("SELECT * from articles");
+    console.log(result.rows[0]);
+    res.render("articles/index", { articles: result.rows });
+  } catch (err) {
+    console.log(err);
+  }
 });
 
 app.get("/about", async (req, res) => {
