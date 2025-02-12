@@ -96,6 +96,11 @@ An article can have many comments 1:N
 4. **(Done)** Create and test routes to create/destroy the 3 tables and their relationships to enforce referential integrity - ie child records must point to valid parents.
 5. **(In Progress)** Create queries to add records to each of the three tables taking into account the foreign key references.
 6. **In Progress** Change all routes to use Postgres for all CRUD operations on Articles (Insert, Select, Update, Delete)\
-    todo - the INSERT route for a new article
+   todo - the INSERT route for a new article
 7. Add an error page
 8. Update all routes to use the error page
+
+## Item 1 in Detail - add user authentication (ref youtube https://www.youtube.com/watch?v=F-sFp_AvHc8)
+
+1. Set up passport for basic user/password registration and login
+2. Potentially adapt this to use JWTs - or replace - to get JWT Experience

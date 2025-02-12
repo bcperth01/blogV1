@@ -1,5 +1,5 @@
 import express from "express";
-import Article from "../models/article.js";
+// import Article from "../models/article.js";
 import slugify from "slugify";
 //import { marked } from "marked";
 import markdownit from "markdown-it";
@@ -75,6 +75,7 @@ const md = markdownit({
 
 const router = express.Router();
 
+// A template articles record
 let blankArticle = {
   //id                  uuid PRIMARY KEY DEFAULT uuid_generate_v4(),\
   title: "",
@@ -101,7 +102,10 @@ router.post("/", async (req, res) => {
   let newArticle = { ...blankArticle };
   newArticle.title = req.body.title.trim();
   newArticle.description = req.body.description.trim();
-  newArticle.markdown = req.body.markdown.trim();
+  newArticle.markdown = removeDollarDollar(
+    req.body.markdown.trim(),
+    "${newArticle.markdown}"
+  );
   newArticle.slug = slugify(req.body.title, {
     lower: true,
     strict: true,
@@ -112,14 +116,14 @@ router.post("/", async (req, res) => {
       `INSERT INTO articles \
           (title, slug ,tag_list, description, markdown, published,user_id)\
        VALUES ('${newArticle.title}','${newArticle.slug}','${newArticle.tag_list}','${newArticle.description}',\
-               '${newArticle.markdown}','${newArticle.published}','${newArticle.user_id}')`
+               $$${newArticle.markdown}$$,'${newArticle.published}','${newArticle.user_id}')`
     );
     console.log("Result", result);
 
     newArticle.sanitisedHtml = dompurify.sanitize(
       md.render(newArticle.markdown.trim())
     );
-    res.render(`articles/edit`, { article: newArticle }); // for now continue editing until Cancel or Done pressed
+    res.redirect(`articles/edit/${newArticle.slug}`); // for now continue editing until Cancel or Done pressed
   } catch (error) {
     console.log("error", error);
     res.render("articles/new", { article: newArticle }); // renders "/views/articles/new.ejs" - the new article form, which should show the values already entered
@@ -129,6 +133,24 @@ router.post("/", async (req, res) => {
 // Converted to Postgres - Reach here via the edit form submission.
 // Does a PUT to /articles/:id to update an existing article
 // On form submission, req.body will contain the form contents
+/**
+ * The is a curly problem here with markdown.
+ * MD can contain code blocks, which are denoted inside a string of ``` before and after the block.
+ * So if your code contains strings with single quotes - like  let a = `abc` then the SQL will complain
+ * because its not able to unravel the quotes.
+ *   ```js
+ *    let a = `abc`
+ *   ```
+ * You can wrap the md in $$, and then SQL will ignore all the quote confusion, and the above example works fine.
+ *
+ * However if the MD contains an SQL clause as below, then the markdown itself will contain the $$ delimiters internally
+ * and so markdown = $$${editedArticle.markdown}$$ will cause double wrapping - again confusing SQL.
+ *
+ * One workaround would be to not use single quotes javascript strings - but that would stop the user from copy-pasting
+ * random JA code into the markdown.
+ *
+ *
+ */
 router.put("/:id", async (req, res, next) => {
   try {
     const result = await pg_pool.query(
@@ -146,12 +168,16 @@ router.put("/:id", async (req, res, next) => {
     });
     editedArticle.title = req.body.title.trim();
     editedArticle.description = req.body.description.trim();
-    editedArticle.markdown = req.body.markdown.trim();
+    editedArticle.markdown = removeDollarDollar(
+      req.body.markdown.trim(),
+      "${editedArticle.markdown}"
+    );
+    console.log("editArticle", editedArticle);
     // save the changes
     const saveResult = await pg_pool.query(
       `UPDATE articles \
          SET slug = '${editedArticle.slug}', title = '${editedArticle.title}',\
-             description = '${editedArticle.description}', markdown = '${editedArticle.markdown}'\
+             description = '${editedArticle.description}', markdown = $$${editedArticle.markdown}$$\
          WHERE id ='${req.params.id}'`
     );
 
@@ -209,8 +235,12 @@ router.get("/edit/:slug", async (req, res) => {
   }
 });
 
+// replace the $$ surrounding the markdown with single quote
+function removeDollarDollar(md, str) {
+  return md.replace("$$" + str + "$$", "'" + str + "'");
+}
 /**
- * ************************tuff under developmenet to be deleted ************************
+ * ************************stuff under developmenet to be deleted ************************
  */
 // This is wrongly named
 router.put("/updateArticle", async (req, res) => {

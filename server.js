@@ -1,18 +1,32 @@
 import express from "express";
 import mongoose from "mongoose"; // to be replaced by Postgres
 import articlesRouter from "./routes/articles.js";
-import path from "path"; // uninstall this if not being used.
-import Article from "./models/article.js";
+import authRouter from "./routes/auth.js";
 import methodOverride from "method-override";
 import dotenv from "dotenv";
 import errorHandler from "./middleware/errorHandler.js";
 import pg_pool from "./pgQueries/connectPool.js"; // connection to PostGres
 import { createTables } from "./pgQueries/createTables.js";
 import { addUser, getAllUsers } from "./pgQueries/queries.js";
+// For authentication using passport.js
+import passport from "passport";
+import passport_local from "passport-local";
+import crypto from "crypto";
+import session from "express-session";
+
+// Create a postgres session store
+import genFunc from "connect-pg-simple"; // a postress session store
+const pgSessionStore = genFunc(session);
+const sessionStore = new pgSessionStore({
+  pool: pg_pool, // Connection pool
+  createTableIfMissing: true,
+  pruneSessionInterval: 90, // deletes dormant sessions after 90 secs
+  // Insert connect-pg-simple options here
+});
 
 dotenv.config(); // Loads environment variables from .env file into process.env
 
-// connect to MongoDB via Mongoose
+// connect to MongoDB via Mongoose (now replaced by PostgreSQL)
 mongoose.connect("mongodb://localhost/blog");
 
 const app = express();
@@ -26,14 +40,29 @@ app.use(methodOverride("_method")); // the string we use to indicate the desired
 app.use(express.static("public")); // To enable public assets to be found by the browser,see https://expressjs.com/en/starter/static-files.html
 app.use(errorHandler); // returns 500 status and error message
 
-// Routes
-app.use("/articles", articlesRouter); // all /articles/* routes are in /routes/artciles folder
+// Activate session middleware using a postgres store
+app.use(
+  session({
+    store: sessionStore,
+    secret: process.env.COOKIE_SECRET,
+    cookie: { maxAge: 1 * 24 * 60 * 60 * 1000 }, // 1 day(s) for cookie to expire
+    resave: false,
+    saveUninitialized: false, // set false so it only save if the session data changess
+    // Insert more express-session options here
+  })
+);
+app.use(passport.authenticate("session")); // what is this?
+
+// Routers
+app.use("/", authRouter); // routes will look like /login
+app.use("/articles", articlesRouter);
 
 // Home route only displays a list of articles for now
 app.get("/testPG", async (req, res) => {
   try {
     const result = await pg_pool.query("SELECT current_database()");
     res.send(`The current database is "${result.rows[0].current_database}"`);
+    console.log("session", req.session);
   } catch (err) {
     console.log(err);
   }

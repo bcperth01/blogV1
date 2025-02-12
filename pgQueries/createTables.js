@@ -33,6 +33,8 @@ const createUsersTable =
     id                  uuid PRIMARY KEY DEFAULT uuid_generate_v4(),\
     first_name          varchar(80),\
     last_name           varchar(80),\
+    username            varchar(80),\
+    hashed_password     varchar(80),\
     email               varchar(80),\
     member_type         varchar(16),\
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),\
