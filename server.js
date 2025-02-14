@@ -10,8 +10,6 @@ import { createTables } from "./pgQueries/createTables.js";
 import { addUser, getAllUsers } from "./pgQueries/queries.js";
 // For authentication using passport.js
 import passport from "passport";
-import passport_local from "passport-local";
-import crypto from "crypto";
 import session from "express-session";
 
 // Create a postgres session store
@@ -117,6 +115,12 @@ app.get("/getAllUsers", async (req, res) => {
 
 // Home route
 app.get("/", async (req, res) => {
+  if (req.isAuthenticated()) {
+    console.log(req.user);
+  } else {
+    console.log("user is not authenticated");
+  }
+
   // const articles = await Article.find().sort({ createdAt: "desc" });
   try {
     const result = await pg_pool.query("SELECT * from articles");

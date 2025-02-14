@@ -32,8 +32,7 @@ async function verifyUser(username, password, cb) {
   console.log("Reached here", row);
   crypto.pbkdf2(
     password,
-    // row.salt,
-    "somedummysalt123456",
+    row.salt,
     310000,
     32,
     "sha256",
@@ -41,11 +40,9 @@ async function verifyUser(username, password, cb) {
       if (err) {
         return cb(err);
       }
-      console.log("hashedPassword", hashedPassword);
-      //   if (!crypto.timingSafeEqual(row.hashed_password, hashedPassword)) {
       if (
         !crypto.timingSafeEqual(
-          Buffer.from(row.password, "utf-8"),
+          Buffer.from(row.hashed_password, "utf-8"),
           hashedPassword
         )
       ) {
@@ -58,7 +55,14 @@ async function verifyUser(username, password, cb) {
   );
 }
 
-// Seriuialise and deserialise are used to persist user data in the session store
+/**
+ * Serialise and deserialise are used to persist anf retrieve user data in the session store
+ * serializeUser() in this case is passed the user object and told to save an object
+ * containing the user id and username
+ * deserializeUser() in this case is told to return that object from the session data.
+ * Note: If we only passed the user.id to serializeUser() then we could use deserializeUser()
+ * to read the user table and return whatever data us needed,
+ */
 passport.serializeUser(function (user, cb) {
   process.nextTick(function () {
     cb(null, { id: user.id, username: user.username });
@@ -103,41 +107,6 @@ router.get("/signup", function (req, res, next) {
   res.render("auth/signup");
 });
 
-// // Function to save the new user and log them in automatically
-// async function saveUserAndLogin(err, hashedPassword) {
-//   if (err) {
-//     return next(err);
-//   }
-//   try {
-//     await pg_pool.query(
-//       "INSERT INTO users (username, hashed_password, salt) VALUES (?, ?, ?)",
-//       [req.body.username, hashedPassword, salt]
-//     );
-//   } catch (err) {
-//     return next(err);
-//   }
-
-//   const user = {
-//     id: this.lastID,
-//     username: req.body.username,
-//   };
-
-//   req.login(user, function (err) {
-//     if (err) {
-//       return next(err);
-//     }
-//     res.redirect("/");
-//   });
-// }
-
-// // function to hash the password and save the new new user in table users
-// async function signupFn(req, res, next) {
-//   var salt = crypto.randomBytes(16);
-//   crypto.pbkdf2(req.body.password, salt, 310000, 32, "sha256", () =>
-//     saveUserAndLogin(req, res, next)
-//   );
-// }
-
 // router.post("/signup", () => signupFn(req, res, next));
 
 router.post("/signup", function (req, res, next) {
@@ -152,21 +121,21 @@ router.post("/signup", function (req, res, next) {
       if (err) {
         return next(err);
       }
+      let result = []; // to retrieve the users id in postgres, after save
       try {
-        console.log(req.body);
-        console.log(hashedPassword);
-        console.log(salt);
-        await pg_pool.query(
-          "INSERT INTO users (username, hashed_password, salt) VALUES ($1, $2, $3)",
+        result = await pg_pool.query(
+          "INSERT INTO users (username, hashed_password, salt) VALUES ($1, $2, $3) RETURNING id",
           [req.body.username, hashedPassword, salt]
         );
       } catch (err) {
         console.log("error saving new user", err);
         return next(err);
       }
-      var user = {
-        id: this.lastID,
+      const user = {
+        // id: this.lastID,
+        id: result.rows[0].id,
         username: req.body.username,
+        // user_id: ,
       };
       req.login(user, function (err) {
         if (err) {

@@ -97,10 +97,17 @@ An article can have many comments 1:N
 5. **(In Progress)** Create queries to add records to each of the three tables taking into account the foreign key references.
 6. **In Progress** Change all routes to use Postgres for all CRUD operations on Articles (Insert, Select, Update, Delete)\
    todo - the INSERT route for a new article
-7. Add an error page
+7. **(In Progress)** Add an error page
 8. Update all routes to use the error page
 
 ## Item 1 in Detail - add user authentication (ref youtube https://www.youtube.com/watch?v=F-sFp_AvHc8)
 
-1. Set up passport for basic user/password registration and login
-2. Potentially adapt this to use JWTs - or replace - to get JWT Experience
+1. **(Done)** Set up passport for local user/password registration and login\
+   **In Progress** Make nice registration and login forms, and add navigation items
+2. Optionally add a JWT strategy
+3. Optionally add Google/Github strategies
+4. Update the new article route to include the user id of the logged in user.
+5. Implement the publish route and factor published = true into the list articles route.\
+   Also list articles newest to oldest.
+6. Allow admins only to delete an article
+7. allow admins and the owner to edit an article.
