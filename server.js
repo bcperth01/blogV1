@@ -1,5 +1,4 @@
 import express from "express";
-import mongoose from "mongoose"; // to be replaced by Postgres
 import articlesRouter from "./routes/articles.js";
 import authRouter from "./routes/auth.js";
 import methodOverride from "method-override";
@@ -8,6 +7,7 @@ import errorHandler from "./middleware/errorHandler.js";
 import pg_pool from "./pgQueries/connectPool.js"; // connection to PostGres
 import { createTables } from "./pgQueries/createTables.js";
 import { addUser, getAllUsers } from "./pgQueries/queries.js";
+
 // For authentication using passport.js
 import passport from "passport";
 import session from "express-session";
@@ -23,9 +23,6 @@ const sessionStore = new pgSessionStore({
 });
 
 dotenv.config(); // Loads environment variables from .env file into process.env
-
-// connect to MongoDB via Mongoose (now replaced by PostgreSQL)
-mongoose.connect("mongodb://localhost/blog");
 
 const app = express();
 
@@ -51,8 +48,16 @@ app.use(
 );
 app.use(passport.authenticate("session")); // what is this?
 
+// Send some login data to templates for conditional rendering
+// Note: Must be located before the routers below = or will not apply to the subroutes
+app.use((req, res, next) => {
+  res.locals.loggedIn = req.isAuthenticated();
+  res.locals.username = req.isAuthenticated() ? req.user.username : "";
+  next();
+});
+
 // Routers
-app.use("/", authRouter); // routes will look like /login
+app.use("/auth", authRouter); // routes will look like /login
 app.use("/articles", articlesRouter);
 
 // Home route only displays a list of articles for now
@@ -64,8 +69,12 @@ app.get("/testPG", async (req, res) => {
   } catch (err) {
     console.log(err);
   }
+  console.log(res.locals.loggedIn);
 });
 
+app.get("/", (req, res, next) => {
+  res.redirect("/articles/home");
+});
 // setup routes
 // ----------------------------------------
 app.get("/createTables", async (req, res) => {
@@ -113,26 +122,11 @@ app.get("/getAllUsers", async (req, res) => {
   }
 });
 
-// Home route
-app.get("/", async (req, res) => {
-  if (req.isAuthenticated()) {
-    console.log(req.user);
-  } else {
-    console.log("user is not authenticated");
-  }
-
-  // const articles = await Article.find().sort({ createdAt: "desc" });
-  try {
-    const result = await pg_pool.query("SELECT * from articles");
-    res.render("articles/index", { articles: result.rows });
-  } catch (err) {
-    console.log(err);
-  }
-});
-
 app.get("/about", async (req, res) => {
-  // const articles = await Article.find().sort({ createdAt: "desc" });
-  res.render("about/about"); // Note: res.render NOT res.send - will render "/views/about/about.ejs"
+  console.log("user", req.user); // like { id: '9b77ecde-ebdf-482f-8ddc-97de326c9058', username: 'shona' }
+  res.render("about/about", {
+    res: res.locals,
+  });
 });
 
 // start the server

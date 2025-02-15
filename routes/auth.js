@@ -56,7 +56,7 @@ async function verifyUser(username, password, cb) {
 }
 
 /**
- * Serialise and deserialise are used to persist anf retrieve user data in the session store
+ * Serialise and deserialise are used to persist and retrieve user data in the session store
  * serializeUser() in this case is passed the user object and told to save an object
  * containing the user id and username
  * deserializeUser() in this case is told to return that object from the session data.
@@ -88,12 +88,12 @@ router.post(
   "/login/password",
   passport.authenticate("local", {
     successRedirect: "/",
-    failureRedirect: "/login",
+    failureRedirect: "/auth/login",
   })
 );
 
 // logs out the user and redirects to home
-router.post("/logout", function (req, res, next) {
+router.get("/logout", function (req, res, next) {
   req.logout(function (err) {
     if (err) {
       return next(err);

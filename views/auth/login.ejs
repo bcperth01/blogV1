@@ -1,14 +1,15 @@
 <h1>Sign in</h1>
-<form action="/login/password" method="post">
+<form action="/auth/login/password" method="post" autocomplete="off">
   <section>
     <label for="username">Username</label>
     <input
       id="username"
       name="username"
       type="text"
-      autocomplete="username"
+      placeholder="user name"
       required
       autofocus
+      value=""
     />
   </section>
   <section>
@@ -17,8 +18,9 @@
       id="current-password"
       name="password"
       type="password"
-      autocomplete="current-password"
+      placeholder="password"
       required
+      value=""
     />
   </section>
   <button type="submit">Sign in</button>

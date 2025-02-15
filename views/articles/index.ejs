@@ -18,6 +18,11 @@
    
     <div class="container">
     <%- include('../components/header') %>
+    <% if (res.loggedIn) { %>
+      <p> <%=res.username%> is logged in</p>
+    <% } else { %>
+      <p> nobody is logged in</p>
+    <% } %>  
     <h1 class="mb-4">Blog Articles</h1>
     <a href="/articles/new" class="btn btn-success">New Article</a>
     <% articles.forEach(article => {%>

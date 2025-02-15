@@ -87,12 +87,35 @@ let blankArticle = {
   published: false,
   // created_at: "",
   // updated_at: "",
-  user_id: "23cd2fbe-5b1c-4b38-808b-9d9168c2e4be",
+  user_id: "",
 };
+
+// This will be the home page
+router.get("/home", async (req, res) => {
+  try {
+    const result = await pg_pool.query(
+      "SELECT markdown from articles where slug='home-page'"
+    );
+    if (result.rows.length === 0) res.redirect("/");
+    let article = result.rows[0];
+    article.sanitisedHtml = dompurify.sanitize(
+      md.render(article.markdown.trim())
+    );
+    res.render("about/home", {
+      article,
+      res: res.locals,
+    });
+  } catch (err) {
+    console.log(err);
+  }
+});
 
 // Reach here with /articles/new
 router.get("/new", (req, res) => {
-  res.render("articles/new", { article: { ...blankArticle } }); // renders "/views/articles/new.ejs" - the new article form
+  res.render("articles/new", {
+    article: { ...blankArticle },
+    res: res.locals,
+  }); // renders "/views/articles/new.ejs" - the new article form
 });
 
 // Reach here on "new form" submission. POST to /articles/ to save a new article
@@ -116,17 +139,17 @@ router.post("/", async (req, res) => {
       `INSERT INTO articles \
           (title, slug ,tag_list, description, markdown, published,user_id)\
        VALUES ('${newArticle.title}','${newArticle.slug}','${newArticle.tag_list}','${newArticle.description}',\
-               $$${newArticle.markdown}$$,'${newArticle.published}','${newArticle.user_id}')`
+               $$${newArticle.markdown}$$,'${newArticle.published}','${req.user.id}')`
     );
     console.log("Result", result);
 
     newArticle.sanitisedHtml = dompurify.sanitize(
-      md.render(newArticle.markdown.trim())
+      md.render(newArticle.markdown.trim(), { res: res.locals })
     );
     res.redirect(`articles/edit/${newArticle.slug}`); // for now continue editing until Cancel or Done pressed
   } catch (error) {
     console.log("error", error);
-    res.render("articles/new", { article: newArticle }); // renders "/views/articles/new.ejs" - the new article form, which should show the values already entered
+    res.render("articles/new", { article: newArticle, res: res.locals }); // renders "/views/articles/new.ejs" - the new article form, which should show the values already entered
   }
 });
 
@@ -160,7 +183,7 @@ router.put("/:id", async (req, res, next) => {
     let editedArticle = { ...result.rows[0] }; // The current state of the record in Postgres
     ///Now change the fields that could have been edited and their derived fields
     editedArticle.sanitisedHtml = dompurify.sanitize(
-      md.render(req.body.markdown.trim())
+      md.render(req.body.markdown.trim(), { res: res.locals })
     );
     editedArticle.slug = slugify(req.body.title, {
       lower: true,
@@ -181,7 +204,7 @@ router.put("/:id", async (req, res, next) => {
          WHERE id ='${req.params.id}'`
     );
 
-    res.render("articles/edit", { article: editedArticle });
+    res.render("articles/edit", { article: editedArticle, res: res.locals });
   } catch (err) {
     console.log(err);
   }
@@ -200,6 +223,26 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// Display all articles route
+router.get("/", async (req, res) => {
+  if (req.isAuthenticated()) {
+    console.log(req.user);
+  } else {
+    console.log("user is not authenticated");
+  }
+
+  // const articles = await Article.find().sort({ createdAt: "desc" });
+  try {
+    const result = await pg_pool.query("SELECT * from articles");
+    res.render("articles/index", {
+      articles: result.rows,
+      res: res.locals,
+    });
+  } catch (err) {
+    console.log(err);
+  }
+});
+
 // Converted to Postgres - Display and article in details by pressing "Read More..""
 router.get("/:slug", async (req, res) => {
   try {
@@ -211,7 +254,7 @@ router.get("/:slug", async (req, res) => {
     article.sanitisedHtml = dompurify.sanitize(
       md.render(article.markdown.trim())
     );
-    res.render("articles/show", { article });
+    res.render("articles/show", { article, res: res.locals });
   } catch (err) {
     console.log(err);
   }
@@ -229,7 +272,7 @@ router.get("/edit/:slug", async (req, res) => {
     article.sanitisedHtml = dompurify.sanitize(
       md.render(article.markdown.trim())
     );
-    res.render("articles/edit", { article });
+    res.render("articles/edit", { article, res: res.locals });
   } catch (err) {
     console.log(err);
   }
