@@ -72,11 +72,17 @@ app.get("/testPG", async (req, res) => {
   console.log(res.locals.loggedIn);
 });
 
+// Home Page redirected - because its implemented as an article
 app.get("/", (req, res, next) => {
   res.redirect("/articles/home");
 });
-// setup routes
-// ----------------------------------------
+
+// About page redirected - because its implemented as an article
+app.get("/about", async (req, res) => {
+  res.redirect("/articles/about");
+});
+
+// Temporary routes used for setup
 app.get("/createTables", async (req, res) => {
   try {
     const result = await createTables();
@@ -94,9 +100,7 @@ app.get("/dropTables", async (req, res) => {
     console.log(err);
   }
 });
-//----------------------------------------------
 
-// add remove users
 app.post("/addUser", async (req, res) => {
   try {
     const result = await addUser({
@@ -111,7 +115,6 @@ app.post("/addUser", async (req, res) => {
   }
 });
 
-// add remove users
 app.get("/getAllUsers", async (req, res) => {
   try {
     const result = await getAllUsers(); // an array of objects
@@ -120,13 +123,6 @@ app.get("/getAllUsers", async (req, res) => {
   } catch (error) {
     console.log("error reading users");
   }
-});
-
-app.get("/about", async (req, res) => {
-  console.log("user", req.user); // like { id: '9b77ecde-ebdf-482f-8ddc-97de326c9058', username: 'shona' }
-  res.render("about/about", {
-    res: res.locals,
-  });
 });
 
 // start the server

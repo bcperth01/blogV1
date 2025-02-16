@@ -90,7 +90,7 @@ let blankArticle = {
   user_id: "",
 };
 
-// This will be the home page
+// Home page redirected
 router.get("/home", async (req, res) => {
   try {
     const result = await pg_pool.query(
@@ -102,6 +102,26 @@ router.get("/home", async (req, res) => {
       md.render(article.markdown.trim())
     );
     res.render("about/home", {
+      article,
+      res: res.locals,
+    });
+  } catch (err) {
+    console.log(err);
+  }
+});
+
+// Home page redirected
+router.get("/about", async (req, res) => {
+  try {
+    const result = await pg_pool.query(
+      "SELECT markdown from articles where slug='about-page'"
+    );
+    if (result.rows.length === 0) res.redirect("/");
+    let article = result.rows[0];
+    article.sanitisedHtml = dompurify.sanitize(
+      md.render(article.markdown.trim())
+    );
+    res.render("about/about", {
       article,
       res: res.locals,
     });

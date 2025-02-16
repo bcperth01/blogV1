@@ -43,14 +43,18 @@
         <% if (res.loggedIn) { %>
         <li class="nav-item mt-2">[user: <%=res.username%>]</li>
         <li class="nav-item">
-          <a class="nav-link" aria-current="page" href="/auth/logout">Logout</a>
+          <a class="nav-link active" aria-current="page" href="/auth/logout"
+            >Logout</a
+          >
         </li>
         <% } else { %>
         <li class="nav-item">
-          <a class="nav-link" aria-current="page" href="/auth/login">Login</a>
+          <a class="nav-link active" aria-current="page" href="/auth/login"
+            >Login</a
+          >
         </li>
         <li class="nav-item">
-          <a class="nav-link" aria-current="page" href="/auth/signup"
+          <a class="nav-link active" aria-current="page" href="/auth/signup"
             >Sign up</a
           >
         </li>

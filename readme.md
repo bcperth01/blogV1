@@ -67,13 +67,13 @@ There are four **ejs** template files, all located in `/view/articles/` director
 1. Add a user login so that only admin users can create, edit or delete posts
 2. **(Done)**Change to using `markdown-it` library rather than `marked` .... its more active and current.
 3. **(Done)**Add code highlighting - using the highlight.js package.
-4. Change the db to Postgres and\
-   add full text search.
+4. **(Done)**Change the db to Postgres and
+   **TODO** add full text search.
 5. Allow visitors to add comments to posts
 6. **(Done)** Add a nav bar with a Home Page and About Page
 7. Make the site responsive (maybe)
 8. Figure out how to deploy and do it
-9. **(Done)** Remove sanitiseHTML attribute from the model - ie no longer to be in the Mongo table\
+9. **(Done)** Remove sanitiseHTML attribute from the model - ie no longer to be in the Mongo table
    Instead calculate it on the fly for the "show" template.
 10. Add a `publish` status/workflow so that only published blogs can be seen by visitors
 11. Make sure it has appropiate SEO elements
@@ -108,8 +108,13 @@ An article can have many comments 1:N
    **In Progress** Make nice registration and login forms, and add navigation items
 2. Optionally add a JWT strategy
 3. Optionally add Google/Github strategies
-4. Update the new article route to include the user id of the logged in user.
-5. Implement the publish route and factor published = true into the list articles route.\
+4. **Done** Update the new article route to include the user id of the logged in user.
+5. Implement the publish route and factor published = true into the list articles route.
+   add publishReq to articles
    Also list articles newest to oldest.
 6. Allow admins only to delete an article
 7. allow admins and the owner to edit an article.
+8. **Done** Create the Home and About pages (as markdown articles)
+9. Make the article list into cards
+10. Add admin route to manage articles
+11. Add admin route to manage users
