@@ -4,7 +4,7 @@ export async function addUser(user) {
   console.log("user", user);
   try {
     let result = await pg_pool.query(
-      `INSERT INTO users (first_name, last_name,email, member_type)\
+      `INSERT INTO users (first_name, last_name, email, member_type)\
             VALUES ('${user.firstName}', '${user.lastName}', '${user.email}','${user.memberType}')`
     );
     return result;

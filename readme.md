@@ -101,6 +101,8 @@ An article can have many comments 1:N
    todo - the INSERT route for a new article
 7. **(In Progress)** Add an error page
 8. Update all routes to use the error page
+9. Add an unauthorised page
+10. Update non public routes to use the unauthorised page
 
 ## Item 1 in Detail - add user authentication (ref youtube https://www.youtube.com/watch?v=F-sFp_AvHc8)
 

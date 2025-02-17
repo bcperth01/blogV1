@@ -101,20 +101,6 @@ app.get("/dropTables", async (req, res) => {
   }
 });
 
-app.post("/addUser", async (req, res) => {
-  try {
-    const result = await addUser({
-      firstName: "Brendan",
-      lastName: "Curtin",
-      email: "brendan@email.com",
-      memberType: "admin",
-    });
-    res.send("added user OK");
-  } catch (error) {
-    console.log("error adding user");
-  }
-});
-
 app.get("/getAllUsers", async (req, res) => {
   try {
     const result = await getAllUsers(); // an array of objects
