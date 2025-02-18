@@ -1,27 +1,117 @@
-<h1>Sign in</h1>
-<form action="/auth/login/password" method="post" autocomplete="off">
-  <section>
-    <label for="username">Username</label>
-    <input
-      id="username"
-      name="username"
-      type="text"
-      placeholder="user name"
-      required
-      autofocus
-      value=""
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
     />
-  </section>
-  <section>
-    <label for="current-password">Password</label>
-    <input
-      id="current-password"
-      name="password"
-      type="password"
-      placeholder="password"
-      required
-      value=""
-    />
-  </section>
-  <button type="submit">Sign in</button>
-</form>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
+    <link type="text/css" href="/styles/github-dark.min.css" rel="stylesheet" />
+    <title>About</title>
+  </head>
+  <body>
+    <!-- container for page -->
+    <div class="container pt-5 mt-5">
+      <!-- One outer row - whose contents will be centered-->
+      <div class="row justify-content-center">
+        <!-- Inner fixed width row with border -->
+        <div
+          style="width: 450px"
+          class="border border-primary border-3 rounded-5 bg-light m1"
+        >
+          <!-- inner div to contain the form -->
+          <div
+            style="
+              padding-top: 30px;
+              padding-bottom: 30px;
+              padding-right: 40px;
+              padding-left: 30px;
+            "
+          >
+            <div class="row mb-3">
+              <div style="width: 45px"></div>
+              <h2 class="col text-center">Login</h2>
+            </div>
+            <!-- This is the form -->
+            <form class="flex" action="/auth/signup" method="post">
+              <!-- Username (for login) -->
+              <section class="row mb-2">
+                <label style="width: 45px" for="username"
+                  ><svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    fill="currentColor"
+                    class="bi bi-person-workspace"
+                    viewBox="0 0 16 16"
+                  >
+                    <path
+                      d="M4 16s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-5.95a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5"
+                    />
+                    <path
+                      d="M2 1a2 2 0 0 0-2 2v9.5A1.5 1.5 0 0 0 1.5 14h.653a5.4 5.4 0 0 1 1.066-2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v9h-2.219c.554.654.89 1.373 1.066 2h.653a1.5 1.5 0 0 0 1.5-1.5V3a2 2 0 0 0-2-2z"
+                    />
+                  </svg>
+                </label>
+                <input
+                  class="col"
+                  id="username"
+                  name="username"
+                  type="username"
+                  autocomplete="off"
+                  placeholder="Username *"
+                  required
+                />
+              </section>
+              <!-- Password -->
+              <section class="row mb-2">
+                <label style="width: 45px" for="password"
+                  ><svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    fill="currentColor"
+                    class="bi bi-lock"
+                    viewBox="0 0 16 16"
+                  >
+                    <path
+                      d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2M5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1"
+                    />
+                  </svg>
+                </label>
+                <input
+                  class="col"
+                  id="password"
+                  name="password"
+                  type="password"
+                  autocomplete="off"
+                  placeholder="Password *"
+                  required
+                />
+              </section>
+              <section class="row">
+                <div style="width: 45px"></div>
+                <div class="col text-danger">
+                  <small>Error message goes here if any</small>
+                </div>
+              </section>
+              <section class="row mb-2 pt-1">
+                <div style="width: 45px"></div>
+                <button class="col btn btn-primary" type="submit">login</button>
+              </section>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
