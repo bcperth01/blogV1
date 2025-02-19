@@ -1,6 +1,7 @@
 import express from "express";
 import articlesRouter from "./routes/articles.js";
 import authRouter from "./routes/auth.js";
+import adminRouter from "./routes/admin.js";
 import methodOverride from "method-override";
 import dotenv from "dotenv";
 import errorHandler from "./middleware/errorHandler.js";
@@ -59,18 +60,7 @@ app.use((req, res, next) => {
 // Routers
 app.use("/auth", authRouter); // routes will look like /login
 app.use("/articles", articlesRouter);
-
-// Home route only displays a list of articles for now
-app.get("/testPG", async (req, res) => {
-  try {
-    const result = await pg_pool.query("SELECT current_database()");
-    res.send(`The current database is "${result.rows[0].current_database}"`);
-    console.log("session", req.session);
-  } catch (err) {
-    console.log(err);
-  }
-  console.log(res.locals.loggedIn);
-});
+app.use("/admin", adminRouter);
 
 // Home Page redirected - because its implemented as an article
 app.get("/", (req, res, next) => {
@@ -80,35 +70,6 @@ app.get("/", (req, res, next) => {
 // About page redirected - because its implemented as an article
 app.get("/about", async (req, res) => {
   res.redirect("/articles/about");
-});
-
-// Temporary routes used for setup
-app.get("/createTables", async (req, res) => {
-  try {
-    const result = await createTables();
-    res.send(`Tables were created OK`);
-  } catch (err) {
-    console.log(err);
-  }
-});
-
-app.get("/dropTables", async (req, res) => {
-  try {
-    const result = await pg_pool.query("SELECT current_database()");
-    res.send(`The current database is "${result.rows[0].current_database}"`);
-  } catch (err) {
-    console.log(err);
-  }
-});
-
-app.get("/getAllUsers", async (req, res) => {
-  try {
-    const result = await getAllUsers(); // an array of objects
-    console.log("GetAllUsers result", result);
-    res.send(result);
-  } catch (error) {
-    console.log("error reading users");
-  }
 });
 
 // start the server

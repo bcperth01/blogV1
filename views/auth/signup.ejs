@@ -67,6 +67,7 @@
                   type="text"
                   autocomplete="first_name"
                   placeholder="First Name"
+                  value="<%=form.first_name ||''%>"
                 />
               </section>
               <!-- Last Name -->
@@ -92,6 +93,7 @@
                   type="text"
                   autocomplete="last_name"
                   placeholder="Last Name"
+                  value="<%=form.last_name || ''%>"
                 />
               </section>
               <!-- Email -->
@@ -116,11 +118,13 @@
                   name="email"
                   type="email"
                   autocomplete="email"
-                  placeholder="Email"
+                  placeholder="Email *"
+                  required
+                  value="<%=form.email || ''%>"
                 />
               </section>
               <!-- Member Type (Role) -->
-              <section class="row mb-2">
+              <!-- <section class="row mb-2">
                 <label style="width: 45px" for="member-type"
                   ><svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -140,7 +144,7 @@
                   <option value="user">User</option>
                   <option value="admin">Admin</option>
                 </select>
-              </section>
+              </section> -->
               <!-- Username (for login) -->
               <section class="row mb-2">
                 <label style="width: 45px" for="username"
@@ -168,6 +172,7 @@
                   autocomplete="username"
                   placeholder="Username *"
                   required
+                  value="<%=form.username%>"
                 />
               </section>
               <!-- Password -->
@@ -194,11 +199,12 @@
                   autocomplete="password"
                   placeholder="Password *"
                   required
+                  value="<%=form.password  || ''%>"
                 />
               </section>
               <!-- Confirm Password -->
               <section class="row mb-2">
-                <label style="width: 45px" for="confirm-password"
+                <label style="width: 45px" for="confirm_password"
                   ><svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
@@ -214,20 +220,23 @@
                 </label>
                 <input
                   class="col ml-1"
-                  id="confirm-password"
-                  name="confirm-password"
+                  id="confirm_password"
+                  name="confirm_password"
                   type="password"
-                  autocomplete="new-password"
+                  autocomplete="new_password"
                   placeholder="Confirm Password *"
                   required
+                  value="<%=form.confirm_password || ''%>"
                 />
               </section>
+              <% if (err_msg !== "") { %>
               <section class="row">
                 <div style="width: 45px"></div>
                 <div class="col text-danger">
-                  <small>Error message goes here if any</small>
+                  <small><%= err_msg %></small>
                 </div>
               </section>
+              <% } %>
               <section class="row mb-2 pt-1">
                 <div style="width: 45px"></div>
                 <button class="col btn btn-primary" type="submit">

@@ -34,14 +34,16 @@ const createUsersTable =
     first_name          varchar(80),\
     last_name           varchar(80),\
     username            varchar(80),\
-    hashed_password     varchar(80),\
     email               varchar(80),\
     member_type         varchar(16),\
+    salt                bytea,\
+    hashed_password     bytes,\
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),\
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()\
 );";
 
 // articles belong to one user
+// NOTE: Published can be "unpublished | pending | published | suspended"
 const createArticlesTable =
   "CREATE TABLE IF NOT EXISTS articles (\
     id                  uuid PRIMARY KEY DEFAULT uuid_generate_v4(),\
@@ -51,7 +53,7 @@ const createArticlesTable =
     description         varchar(512),\
     markdown            text,\
     vector_to_search    tsvector,\
-    published           boolean,\
+    published           varchar(16),\
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),\
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),\
     user_id             uuid,\

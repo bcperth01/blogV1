@@ -64,7 +64,7 @@ There are four **ejs** template files, all located in `/view/articles/` director
 
 ## Version 2 Changes
 
-1. Add a user login so that only admin users can create, edit or delete posts
+1. Add a user login so that only users can create, edit or delete posts
 2. **(Done)**Change to using `markdown-it` library rather than `marked` .... its more active and current.
 3. **(Done)**Add code highlighting - using the highlight.js package.
 4. **(Done)**Change the db to Postgres and
@@ -76,7 +76,7 @@ There are four **ejs** template files, all located in `/view/articles/` director
 9. **(Done)** Remove sanitiseHTML attribute from the model - ie no longer to be in the Mongo table
    Instead calculate it on the fly for the "show" template.
 10. Add a `publish` status/workflow so that only published blogs can be seen by visitors
-11. Make sure it has appropiate SEO elements
+11. Make sure it has appropriate SEO elements
 12. **(Done)** Remove the "validate" middleware from the model and create the slug and sanitisedHtml in the route as needed.
     **(Done)** Remove the middleware implementation of the save function for both new and update API's - it was hard to understand
 13. **(Done)** Split the screen when displaying the edit template to allow a preview of the markup being entered

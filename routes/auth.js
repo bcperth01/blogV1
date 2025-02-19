@@ -78,7 +78,7 @@ passport.deserializeUser(function (user, cb) {
 // Apply the passport middleware
 passport.use(new localStrategy(verifyUser));
 
-// This route diaplsy the login form
+// This route displays the login form
 router.get("/login", function (req, res, next) {
   res.render("auth/login");
 });
@@ -104,12 +104,60 @@ router.get("/logout", function (req, res, next) {
 
 // Presents the signup screen
 router.get("/signup", function (req, res, next) {
-  res.render("auth/signup");
+  res.render("auth/signup", {
+    err_msg: req.query.err_msg ? req.query.err_msg : "",
+    form: req.query.form ? JSON.parse(decodeURIComponent(req.query.form)) : {},
+  });
 });
 
 // router.post("/signup", () => signupFn(req, res, next));
 
-router.post("/signup", function (req, res, next) {
+router.post("/signup", async function (req, res, next) {
+  //The form has mandatory fields username, email, password and confirm_password
+  // Check that username does not already exist and that the passwords are the same
+  try {
+    let goodNewUser = false;
+    let err_msg = "";
+    let result = await pg_pool.query(
+      "select username from users where username = $1",
+      [req.body.username]
+    );
+    // new user is good if the username or email dont allready exist AND the passwords are the same and have length > 7
+    if (result.rowCount === 0) {
+      result = await pg_pool.query("select email from users where email = $1", [
+        req.body.email,
+      ]);
+      if (result.rowCount === 0) {
+        if (
+          req.body.password.length > 7 &&
+          req.body.password === req.body.confirm_password
+        ) {
+          goodNewUser = true;
+        } else {
+          err_msg = `Passwords don't match or not at least 8 chars`;
+        }
+      } else {
+        err_msg = `Existing account with suplied email`;
+      }
+    } else {
+      err_msg = `username "${req.body.username}" not available`;
+    }
+
+    if (!goodNewUser) {
+      res.redirect(
+        "/auth/signup/?err_msg=" +
+          encodeURIComponent(err_msg) +
+          "&form=" +
+          encodeURIComponent(JSON.stringify(req.body))
+      );
+      return; // redirects need a return to stop later code in this route being executed
+    }
+  } catch (err) {
+    console.log("error reading user", err);
+    return next(err);
+  }
+
+  // If we reach here we are good to add the new user
   var salt = crypto.randomBytes(16);
   crypto.pbkdf2(
     req.body.password,
@@ -132,10 +180,8 @@ router.post("/signup", function (req, res, next) {
         return next(err);
       }
       const user = {
-        // id: this.lastID,
         id: result.rows[0].id,
         username: req.body.username,
-        // user_id: ,
       };
       req.login(user, function (err) {
         if (err) {
