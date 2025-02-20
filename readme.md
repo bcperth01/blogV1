@@ -17,7 +17,7 @@ It's a 100% Express Server web server. It talks to a MongoDB server that's runni
 
 It based closely on this tutorial. [How To Build A Markdown Blog Using Node.js, Express, And MongoDB](https://www.youtube.com/watch?v=1NrHkjlWVhM) by "Web Dev Simplified"
 The navbar is based on these bootstrap instructions [Navbar](https://getbootstrap.com/docs/5.3/components/navbar/)
-This tutorial gives an in-dpth on authorisation with passport [User Authentication in Web Apps (Passport.js, Node, Express)](https://www.youtube.com/watch?v=F-sFp_AvHc8&t=6384s)
+This tutorial gives an in-depth on authorisation with passport [User Authentication in Web Apps (Passport.js, Node, Express)](https://www.youtube.com/watch?v=F-sFp_AvHc8&t=6384s)
 
 Routes are:
 

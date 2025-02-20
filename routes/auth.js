@@ -7,9 +7,10 @@ import pg_pool from "../pgQueries/connectPool.js";
 
 const router = express.Router();
 
+const badLoginMessage = "Incorrect username or password";
+
 // Function for Passport to verify a username/password
 async function verifyUser(username, password, cb) {
-  console.log("username", username, "password", password);
   let result = {};
   try {
     result = await pg_pool.query("SELECT * FROM users WHERE username = $1", [
@@ -24,12 +25,11 @@ async function verifyUser(username, password, cb) {
   }
   if (result.rowCount === 0) {
     return cb(null, false, {
-      message: "Incorrect username or password.",
+      message: badLoginMessage, // Note: THis message will be added to req.session.messages[]
     });
   }
 
   let row = result.rows[0];
-  console.log("Reached here", row);
   crypto.pbkdf2(
     password,
     row.salt,
@@ -47,7 +47,7 @@ async function verifyUser(username, password, cb) {
         )
       ) {
         return cb(null, false, {
-          message: "Incorrect username or password.",
+          message: badLoginMessage, // Note: THis message will be added to req.session.messages[]
         });
       }
       return cb(null, row);
@@ -65,7 +65,11 @@ async function verifyUser(username, password, cb) {
  */
 passport.serializeUser(function (user, cb) {
   process.nextTick(function () {
-    cb(null, { id: user.id, username: user.username });
+    cb(null, {
+      id: user.id,
+      username: user.username,
+      member_type: user.member_type,
+    });
   });
 });
 
@@ -79,8 +83,17 @@ passport.deserializeUser(function (user, cb) {
 passport.use(new localStrategy(verifyUser));
 
 // This route displays the login form
+// If there has been previous login failures,
+// req.session.messages[] will have an array of failure messages
+// This gets cleared after a successful login
 router.get("/login", function (req, res, next) {
-  res.render("auth/login");
+  // console.log("session", req.session);
+  res.render("auth/login", {
+    err_msg:
+      req.session.messages?.length > 0
+        ? req.session.messages[req.session.messages.length - 1]
+        : "",
+  });
 });
 
 // This route authenticates the username, password
@@ -89,6 +102,7 @@ router.post(
   passport.authenticate("local", {
     successRedirect: "/",
     failureRedirect: "/auth/login",
+    failureMessage: true, // Enables error messages to be pushed to req.session.messages[]
   })
 );
 
@@ -109,8 +123,6 @@ router.get("/signup", function (req, res, next) {
     form: req.query.form ? JSON.parse(decodeURIComponent(req.query.form)) : {},
   });
 });
-
-// router.post("/signup", () => signupFn(req, res, next));
 
 router.post("/signup", async function (req, res, next) {
   //The form has mandatory fields username, email, password and confirm_password
@@ -179,6 +191,7 @@ router.post("/signup", async function (req, res, next) {
         console.log("error saving new user", err);
         return next(err);
       }
+      // log the new user in automatically
       const user = {
         id: result.rows[0].id,
         username: req.body.username,

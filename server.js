@@ -6,8 +6,6 @@ import methodOverride from "method-override";
 import dotenv from "dotenv";
 import errorHandler from "./middleware/errorHandler.js";
 import pg_pool from "./pgQueries/connectPool.js"; // connection to PostGres
-import { createTables } from "./pgQueries/createTables.js";
-import { addUser, getAllUsers } from "./pgQueries/queries.js";
 
 // For authentication using passport.js
 import passport from "passport";
@@ -64,6 +62,7 @@ app.use("/admin", adminRouter);
 
 // Home Page redirected - because its implemented as an article
 app.get("/", (req, res, next) => {
+  console.log("req.user", req.user);
   res.redirect("/articles/home");
 });
 

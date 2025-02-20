@@ -98,12 +98,14 @@
                   required
                 />
               </section>
+              <% if (err_msg !== "") { %>
               <section class="row">
                 <div style="width: 45px"></div>
                 <div class="col text-danger">
-                  <small>Error message goes here if any</small>
+                  <small><%= err_msg %></small>
                 </div>
               </section>
+              <% } %>
               <section class="row mb-2 pt-1">
                 <div style="width: 45px"></div>
                 <button class="col btn btn-primary" type="submit">login</button>
