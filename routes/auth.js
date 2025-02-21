@@ -85,7 +85,7 @@ passport.use(new localStrategy(verifyUser));
 // This route displays the login form
 // If there has been previous login failures,
 // req.session.messages[] will have an array of failure messages
-// This gets cleared after a successful login
+// The session is replaced with a new session after a successful login
 router.get("/login", function (req, res, next) {
   // console.log("session", req.session);
   res.render("auth/login", {
@@ -93,6 +93,7 @@ router.get("/login", function (req, res, next) {
       req.session.messages?.length > 0
         ? req.session.messages[req.session.messages.length - 1]
         : "",
+    res: res.locals,
   });
 });
 
@@ -121,6 +122,7 @@ router.get("/signup", function (req, res, next) {
   res.render("auth/signup", {
     err_msg: req.query.err_msg ? req.query.err_msg : "",
     form: req.query.form ? JSON.parse(decodeURIComponent(req.query.form)) : {},
+    res: res.locals,
   });
 });
 

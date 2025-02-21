@@ -19,7 +19,9 @@
     <title>About</title>
   </head>
   <body>
-    <!-- container for page -->
+    <!-- container for header -->
+    <div class="container"><%- include('../components/header') %></div>
+    <!-- container for login page -->
     <div class="container pt-5 mt-5">
       <!-- One outer row - whose contents will be centered-->
       <div class="row justify-content-center">
@@ -109,6 +111,14 @@
               <section class="row mb-2 pt-1">
                 <div style="width: 45px"></div>
                 <button class="col btn btn-primary" type="submit">login</button>
+              </section>
+              <section class="row">
+                <div style="width: 45px"></div>
+                <div class="col">
+                  Not registered yet?<span class="px-3"
+                    ><a href="/auth/signup">Sign Up</a></span
+                  >
+                </div>
               </section>
             </form>
           </div>

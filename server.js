@@ -41,7 +41,7 @@ app.use(
     secret: process.env.COOKIE_SECRET,
     cookie: { maxAge: 1 * 24 * 60 * 60 * 1000 }, // 1 day(s) for cookie to expire
     resave: false,
-    saveUninitialized: false, // set false so it only save if the session data changess
+    saveUninitialized: false, // set false so it only saves the session if the session data changess
     // Insert more express-session options here
   })
 );
@@ -50,8 +50,11 @@ app.use(passport.authenticate("session")); // what is this?
 // Send some login data to templates for conditional rendering
 // Note: Must be located before the routers below = or will not apply to the subroutes
 app.use((req, res, next) => {
+  console.log("req.user", req.user);
   res.locals.loggedIn = req.isAuthenticated();
   res.locals.username = req.isAuthenticated() ? req.user.username : "";
+  res.locals.member_type = req.isAuthenticated() ? req.user.member_type : "";
+  console.log("res.locals", res.locals);
   next();
 });
 
