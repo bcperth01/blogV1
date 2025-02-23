@@ -50,11 +50,12 @@ app.use(passport.authenticate("session")); // what is this?
 // Send some login data to templates for conditional rendering
 // Note: Must be located before the routers below = or will not apply to the subroutes
 app.use((req, res, next) => {
-  console.log("req.user", req.user);
+  // console.log("req.user", req.user);
   res.locals.loggedIn = req.isAuthenticated();
   res.locals.username = req.isAuthenticated() ? req.user.username : "";
   res.locals.member_type = req.isAuthenticated() ? req.user.member_type : "";
-  console.log("res.locals", res.locals);
+  res.locals.id = req.isAuthenticated() ? req.user.id : "";
+  // console.log("res.locals", res.locals);
   next();
 });
 

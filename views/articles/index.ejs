@@ -24,69 +24,99 @@
       <div class="d-flex flex-column flex-md-row gap-2">
         <!-- section1 div -->
         <div class="d-flex justify-content-start gap-2">
-            <div>
-              <a href="/articles?filter=all" class="btn btn-secondary btn-sm"
-                >All Published</a
-              >
-            </div>
-            <div>
-              <% if(!res.loggedIn || res.loggedIn && ((res.member_type === "member" || res.member_type === "admin"))) {%>
-              <a href="/articles/?filter=pages" class="btn btn-secondary btn-sm"
-                >My Articles</a
-              >
-              <% } %>
-            </div>
-            <div>
-              <% if(res.loggedIn && (res.member_type === "member" || res.member_type === "admin")) {%>
-              <a href="/articles/new" class="btn btn-primary btn-sm"
-                >Add New Article</a
-              >
-              <% } %>
-            </div>
+          <div>
+            <a
+              href="/articles?filter=published"
+              class="btn btn-secondary btn-sm"
+              >All Published</a
+            >
+          </div>
+          <div>
+            <% if(!res.loggedIn || res.loggedIn && ((res.member_type ===
+            "member" || res.member_type === "admin"))) {%>
+            <a href="/articles/?filter=user_id" class="btn btn-secondary btn-sm"
+              >My Articles</a
+            >
+            <% } %>
+          </div>
+          <div>
+            <% if(res.loggedIn && (res.member_type === "member" ||
+            res.member_type === "admin")) {%>
+            <a href="/articles/new" class="btn btn-primary btn-sm"
+              >Add New Article</a
+            >
+            <% } %>
+          </div>
         </div>
         <!-- section2 div -->
         <div class="d-flex justify-content-start gap-2">
-            <div>
-              <% if(res.loggedIn && res.member_type === "admin") {%>
-              <a href="/articles/?filter=pages" class="btn btn-primary btn-sm"
-                >Page Articles</a
-              >
-              <% } %>
-            </div>
-            <div>
-              <% if(res.loggedIn && res.member_type === "admin") {%>
-              <a href="/articles/?filter=pending" class="btn btn-primary btn-sm"
-                >Pending Articles</a
-              >
-              <% } %>
-            </div>
+          <div>
+            <% if(res.loggedIn && res.member_type === "admin") {%>
+            <a href="/articles/?filter=pages" class="btn btn-secondary btn-sm"
+              >Page Articles</a
+            >
+            <% } %>
+          </div>
+          <div>
+            <% if(res.loggedIn && res.member_type === "admin") {%>
+            <a href="/articles/?filter=pending" class="btn btn-secondary btn-sm"
+              >Pending Articles</a
+            >
+            <% } %>
+          </div>
         </div>
       </div>
-    <% articles.forEach(article => {%>
-    <div class="card mt-4">
-      <div class="card-body">
-        <h4 class="card-title"><%=article.title %></h4>
-        <div class="card-subtitle text-muted mb-2">
-          <%=article.created_at.toLocaleDateString() %>
+      <% if (articles.length === 0) {%>
+      <h4 class="mt-4"><%=none_msg%></h4>
+      <% } else { %>
+      <div class="d-flex flex-wrap gap-4 mt-4">
+        <% articles.forEach(article => {%>
+        <div class="card" style="width: 400px">
+          <div class="card-body">
+            <div class="card-text" style="font-size: 0.8rem">
+              <span class="mr-1 fw-bold">Pub:</span>
+              <span><%=article.created_at.toDateString() %></span>
+              <span class="mr-1m fw-bold">By:</span>
+              <span><%=res.username%></span>
+            </div>
+            <div class="card-text" style="font-size: 0.8rem">
+              <span class="mr-1 fw-bold">Views:</span>
+              <span>1,000,000</span>
+              <span class="mr-1m fw-bold">likes:</span>
+              <span>900,000</span>
+            </div>
+            <h6 class="card-title mt-2"><%=article.title %></h6>
+            <div class="card-text mb-2"><%=article.description %></div>
+            <a
+              href="/articles/<%= article.slug%>"
+              class="btn btn-secondary btn-sm"
+              >Read....
+            </a>
+            <% if(res.loggedIn && (res.id === article.user_id || res.member_type
+            === "admin")) {%>
+            <a
+              href="/articles/edit/<%= article.slug %>"
+              class="btn btn-primary btn-sm"
+            >
+              Edit
+            </a>
+            <% } %> <% if(res.loggedIn && (res.id === article.user_id ||
+            res.member_type === "admin")) {%>
+            <form
+              action="/articles/<%= article.id %>?_method=DELETE"
+              method="POST"
+              class="d-inline"
+            >
+              <button type="submit" class="btn btn-danger btn-sm">
+                Delete
+              </button>
+            </form>
+            <% } %>
+          </div>
         </div>
-        <div class="card-text mb-2"><%=article.description %></div>
-        <a href="/articles/<%= article.slug%>" class="btn btn-secondary btn-sm"
-          >Read More....</a
-        >
-        <a
-          href="articles/edit/<%= article.slug %>"
-          class="btn btn-primary btn-sm"
-          >Edit</a
-        >
-        <form
-          action="/articles/<%= article.id %>?_method=DELETE"
-          method="POST"
-          class="d-inline"
-        >
-          <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-        </form>
+        <% }) %>
       </div>
-      <% }) %>
+      <% } %>
     </div>
   </body>
 </html>

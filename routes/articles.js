@@ -85,9 +85,15 @@ let blankArticle = {
   markdown: "",
   vector_to_search: null,
   published: false,
-  // created_at: "",
-  // updated_at: "",
-  user_id: "",
+  // created_at: "",     // default now()
+  // updated_at: "",     // default now()
+  user_id: "", // user_id of author
+  author: "", //name of author
+  article_type: "article", // 'articles' | "site page"
+  published: "unpublished", // default 'unpublished' | 'pending' | 'published'
+  deleted: false, // true if pending delete
+  // likes: 0, // no of likes default 0
+  // views: 0, // no of vieww default 0
 };
 
 // Home page redirected
@@ -157,9 +163,9 @@ router.post("/", async (req, res) => {
   try {
     const result = await pg_pool.query(
       `INSERT INTO articles \
-          (title, slug ,tag_list, description, markdown, published,user_id)\
+          (title, slug ,tag_list, description, markdown, published,user_id,author)\
        VALUES ('${newArticle.title}','${newArticle.slug}','${newArticle.tag_list}','${newArticle.description}',\
-               $$${newArticle.markdown}$$,'${newArticle.published}','${req.user.id}')`
+               $$${newArticle.markdown}$$,'${newArticle.published}','${req.user.id}','${req.user.username}')`
     );
     console.log("Result", result);
 
@@ -173,7 +179,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Converted to Postgres - Reach here via the edit form submission.
 // Does a PUT to /articles/:id to update an existing article
 // On form submission, req.body will contain the form contents
 /**
@@ -243,20 +248,53 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// Display all articles route
+// Display articles route, applying various filters
+// No authorisation needed
 router.get("/", async (req, res) => {
-  if (req.isAuthenticated()) {
-    console.log(req.user);
-  } else {
-    console.log("user is not authenticated");
+  console.log(req.query);
+  let filter = req.query.filter;
+  let query = "";
+  let none_msg = "";
+  switch (filter) {
+    case "published":
+      query = "SELECT * from articles where published = 'published'";
+      none_msg = "No published articles available";
+      break;
+    case "user_id":
+      query = "SELECT * from articles where user_id =" + `'${res.locals.id}'`;
+      none_msg = `No articles available for user "${res.locals.username}"`;
+      break;
+    case "pages":
+      query = "SELECT * from articles where article_type = 'site page'";
+      none_msg = "No articles page available";
+      break;
+    case "pending":
+      query =
+        "SELECT * from articles where user_id =" +
+        `'${res.locals.id}'` +
+        "and published = 'pending'";
+      none_msg = `No pending articles available for user "${res.locals.username}"`;
+      break;
+    default:
+      query = "SELECT * from articles where published = 'published'";
+      none_msg = "No published articles available";
+      break;
   }
 
-  // const articles = await Article.find().sort({ createdAt: "desc" });
   try {
-    const result = await pg_pool.query("SELECT * from articles");
+    // console.log(query);
+    const result = await pg_pool.query(query);
+    // console.log(result.rows);
+    result.rows.sort((a, b) => {
+      // sort by latest first
+      if (a.created_at > b.created_at) return -1;
+      if (a.created_at > b.created_at) return +1;
+      return 0;
+    });
     res.render("articles/index", {
       articles: result.rows,
       res: res.locals,
+      none_msg,
     });
   } catch (err) {
     console.log(err);

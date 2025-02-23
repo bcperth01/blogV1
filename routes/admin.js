@@ -1,8 +1,4 @@
 import express from "express";
-import passport from "passport";
-import localStrategy from "passport-local";
-import crypto from "crypto";
-
 import pg_pool from "../pgQueries/connectPool.js";
 
 const router = express.Router();
@@ -12,6 +8,7 @@ router.get("/testPG", async (req, res) => {
   try {
     const result = await pg_pool.query("SELECT current_database()");
     res.send(`The current database is "${result.rows[0].current_database}"`);
+    return;
   } catch (err) {
     console.log(err);
   }
