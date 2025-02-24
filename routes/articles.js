@@ -8,6 +8,7 @@ import markdownit from "markdown-it";
 import hljs from "highlight.js/lib/core";
 import javascript from "highlight.js/lib/languages/javascript"; //Warning: This was hightlights js only
 
+import dayjs from "dayjs";
 // see documentation for dompurify
 import createDomPurify from "dompurify";
 import { JSDOM } from "jsdom";
@@ -251,7 +252,6 @@ router.delete("/:id", async (req, res) => {
 // Display articles route, applying various filters
 // No authorisation needed
 router.get("/", async (req, res) => {
-  console.log(req.query);
   let filter = req.query.filter;
   let query = "";
   let none_msg = "";
@@ -291,8 +291,13 @@ router.get("/", async (req, res) => {
       if (a.created_at > b.created_at) return +1;
       return 0;
     });
+    // convert format of the created-at date
+    let articles = result.rows.map((article) => {
+      const formattedDate = dayjs(article.created_at).format("DD MMM, YYYY");
+      return { ...article, created_at: formattedDate };
+    });
     res.render("articles/index", {
-      articles: result.rows,
+      articles,
       res: res.locals,
       none_msg,
     });
@@ -309,9 +314,15 @@ router.get("/:slug", async (req, res) => {
     );
     if (result.rows.length === 0) res.redirect("/");
     let article = result.rows[0];
+    // update the views (no of times the page was accessed)
+    const updatedViews = result.rows[0].views + 1;
+    await pg_pool.query(
+      `UPDATE articles set views ='${updatedViews}' where id = '${result.rows[0].id}'`
+    );
     article.sanitisedHtml = dompurify.sanitize(
       md.render(article.markdown.trim())
     );
+    article.views = updatedViews;
     res.render("articles/show", { article, res: res.locals });
   } catch (err) {
     console.log(err);
