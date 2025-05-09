@@ -6,10 +6,12 @@ I think it needs to be improved before its safe and reasonable to deploy. [See V
 
 ## How to Start the App
 
-1. Use Docker-desktop to start the `mongoBlog` container. This will expose the mongoDB API at `port 27017`
-2. Start MongoDB Compass and connect to verify that MongoDB is working. You should see a database called `blog` and a collection called `articles`
-3. Navigate to `/Documents/my-blog2` in `vscode` and enter `npm run devStart`
-4. Go to the browser and navigate to `/localhost/5001`
+1. (NO LONGER VALID) Use Docker-desktop to start the `mongoBlog` container. This will expose the mongoDB API at `port 27017`
+2. (NO LONGER VALID) Start MongoDB Compass and connect to verify that MongoDB is working. You should see a database called `blog` and a collection called `articles`
+3. Use Docker-desktop to start the "postgres`container. This will expose the mongoDB API at`port 27017`
+4. PgAmdin can be used to inspect the data
+5. Navigate to `/Documents/my-blog2` in `vscode` and enter `npm run devStart`
+6. Go to the browser and navigate to `/localhost/5001`
 
 ## How the App Works (v1)
 
