@@ -1,3 +1,11 @@
+# Note on starting Postgres in Docker
+
+The first time you load Postres it needs some passwords etc. You need to use the CLI
+
+`docker run --name postgres -e POSTGRES_PASSWORD=password -e POSTGRES_USER=postgres -p 5432:5432 -d postgres`
+
+Ftare that you can start and stop the coontainer via Docker desktop
+
 # Blog Site (v1)
 
 This is a very basic blog site that allows a user to enter and edit blog posts in Markdown. All CRUD operations are supported. The articles are saved in a database, and they are displayed in formatted HTML.
@@ -86,7 +94,7 @@ There are four **ejs** template files, all located in `/view/articles/` director
 
 ## Item 4 in Detail - Switch over to Postgres
 
-The reason is to gain access to Postgres fule search text capabilities.
+The reason is to gain access to Postgres full search text capabilities.
 We will not use an ORM to see how complicated things are with an "all SQL"
 solution. We will assess the benefits of later adopting an ORM - like Sequelise
 The model is also extended to include 3 tables: users, articles and comments
