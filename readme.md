@@ -1,6 +1,6 @@
 # Note on starting Postgres in Docker
 
-The first time you load Postres it needs some passwords etc. You need to use the CLI
+The first time you load Postgres it needs some passwords etc. You need to use the CLI
 
 `docker run --name postgres -e POSTGRES_PASSWORD=password -e POSTGRES_USER=postgres -p 5432:5432 -d postgres`
 

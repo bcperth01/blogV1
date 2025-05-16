@@ -6,6 +6,7 @@ import methodOverride from "method-override";
 import dotenv from "dotenv";
 import errorHandler from "./middleware/errorHandler.js";
 import pg_pool from "./pgQueries/connectPool.js"; // connection to PostGres
+import { createTables } from "./pgQueries/createTables.js";
 
 // For authentication using passport.js
 import passport from "passport";
@@ -65,9 +66,15 @@ app.use("/articles", articlesRouter);
 app.use("/admin", adminRouter);
 
 // Home Page redirected - because its implemented as an article
-app.get("/", (req, res, next) => {
+app.get("/", async (req, res, next) => {
   console.log("req.user", req.user);
-  res.redirect("/articles/home");
+
+  // USE NEXT 2 LINES TO CREATE THE TABLES FOR A NEW INSTALLATION
+  // await createTables();
+  // res.send("hello World")
+
+  // NOTE: THIS CAUSES AN ENDLESS LOOP OF REDIRECTS IF THERE ARE NO ARTICLES IN THE DATABASE
+  res.redirect("/articles/home"); // Comment this out if creating new tables for a new installation
 });
 
 // About page redirected - because its implemented as an article

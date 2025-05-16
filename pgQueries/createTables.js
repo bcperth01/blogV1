@@ -37,7 +37,7 @@ const createUsersTable =
     email               varchar(80),\
     member_type         varchar(16),\
     salt                bytea,\
-    hashed_password     bytes,\
+    hashed_password     bytea,\
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),\
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()\
 );";

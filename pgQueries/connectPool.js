@@ -12,7 +12,7 @@ const pg_pool = new Pool({
   password: process.env.PG_PASSWORD,
   database: process.env.PG_DATABASE,
 });
-// This is a postgress "connect" event that is fired when the pool xonnects to execute a query
+// This is a postgress "connect" event that is fired when the pool connects to execute a query
 pg_pool.on("connect", () => {
   console.log("Connected to Postgres");
 });
