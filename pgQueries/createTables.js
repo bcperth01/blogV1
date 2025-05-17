@@ -1,6 +1,6 @@
 import pg_pool from "./connectPool.js";
 
-// intended for single use during dev
+// intended for single use during dev (see the route in /admin/createTables)
 export async function createTables() {
   try {
     await pg_pool.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";');
@@ -17,7 +17,7 @@ export async function createTables() {
   }
 }
 
-// intended for single use during dev
+// intended for single use during dev (see the route in /admin/dropTables)
 export async function dropTables() {
   try {
     const result = await pg_pool.query("SELECT current_database()");
@@ -44,6 +44,8 @@ const createUsersTable =
 
 // articles belong to one user
 // NOTE: Published can be "unpublished | pending | published | suspended"
+// Noted: Fields article_type, author, view, likes, deleted were added 
+// manually to the table before the create query was modified
 const createArticlesTable =
   "CREATE TABLE IF NOT EXISTS articles (\
     id                  uuid PRIMARY KEY DEFAULT uuid_generate_v4(),\
@@ -57,6 +59,11 @@ const createArticlesTable =
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),\
     updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),\
     user_id             uuid,\
+    article_type        varchar(16),\
+    author              varchar(32),\
+    views               integer,\
+    likes               integer,\
+    deleted             boolean,\
     CONSTRAINT          fk_users FOREIGN KEY(user_id) REFERENCES users(id)\
 );";
 

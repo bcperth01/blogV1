@@ -57,7 +57,7 @@ app.use((req, res, next) => {
   res.locals.member_type = req.isAuthenticated() ? req.user.member_type : "";
   res.locals.id = req.isAuthenticated() ? req.user.id : "";
   // console.log("res.locals", res.locals);
-  next();
+  next(); 
 });
 
 // Routers

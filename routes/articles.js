@@ -103,15 +103,16 @@ router.get("/home", async (req, res) => {
     const result = await pg_pool.query(
       "SELECT markdown from articles where slug='home-page'"
     );
-    if (result.rows.length === 0) res.redirect("/");
-    let article = result.rows[0];
-    article.sanitisedHtml = dompurify.sanitize(
-      md.render(article.markdown.trim())
-    );
-    res.render("about/home", {
-      article,
-      res: res.locals,
-    });
+    // if (result.rows.length === 0) res.redirect("/");
+    if (result.rows.length === 0) {res.render("about/homeEmpty",{article:"", res: res.locals});}
+    else {
+      let article = result.rows[0];
+      article.sanitisedHtml = dompurify.sanitize(md.render(article.markdown.trim()));
+      res.render("about/home", {
+        article,
+        res: res.locals,
+      });
+    }   
   } catch (err) {
     console.log(err);
   }
@@ -123,15 +124,17 @@ router.get("/about", async (req, res) => {
     const result = await pg_pool.query(
       "SELECT markdown from articles where slug='about-page'"
     );
-    if (result.rows.length === 0) res.redirect("/");
-    let article = result.rows[0];
-    article.sanitisedHtml = dompurify.sanitize(
+    // if (result.rows.length === 0) res.redirect("/");
+    if (result.rows.length === 0) {res.render("about/aboutEmpty",{article:"", res: res.locals});}
+    else {
+      let article = result.rows[0];
+      article.sanitisedHtml = dompurify.sanitize(
       md.render(article.markdown.trim())
     );
     res.render("about/about", {
       article,
       res: res.locals,
-    });
+    });}    
   } catch (err) {
     console.log(err);
   }
