@@ -2,9 +2,25 @@
 
 The first time you load Postgres it needs some passwords etc. You need to use the CLI
 
-`docker run --name postgres -e POSTGRES_PASSWORD=password -e POSTGRES_USER=postgres -p 5432:5432 -d postgres`
+`docker run --name postgres -e POSTGRES_PASSWORD=password -e POSTGRES_USER=postgres -p 5432:5432 -d postgress
 
-Ftare that you can start and stop the coontainer via Docker desktop
+You can start and stop the container via Docker desktop
+
+# Notes on initially populating the tables in Postgres
+1. Use PGAdmin to create a new database called `express-crud`
+2. Create a `.env` file with the desired database name, user and password.
+   When HTTP server is started, a connection pool is created using the `.env` parameters 
+3. When the serve is up, run `localhost:5001/testPG` route to verify that postgres is alive and also
+   returns the name of the current database ()
+4. The `/` route is routed to `/home` which itself is implemented as a document that has to be
+   retrieved from the database. If the page does not exist, then some instructions are provided
+   how to create it - basically create a new `.md` document with a slug called `home-page`. The route will find it after that. You may have to poke in the slug value after the document has been saved
+5. The same applies to the `/about` route. That needs a document with a slug called `about-page`
+    
+# Notes on backing up an restoring the Postgres database 
+1. When this is working the above initialisation of the `/home` and `/about` pages will not be needed
+2. For now we will use the `backup` and `restore` commands from within PGAdmin
+3. TOTO - test the `backup` and `restore` commands from within PGAdmin
 
 # Blog Site (v1)
 
@@ -96,7 +112,9 @@ There are four **ejs** template files, all located in `/view/articles/` director
 
 The reason is to gain access to Postgres full search text capabilities.
 We will not use an ORM to see how complicated things are with an "all SQL"
-solution. We will assess the benefits of later adopting an ORM - like Sequelise
+solution - althought - an advantage of ORMS is that they go a long way to preventing
+SQL injection attacks supposedly. 
+We will assess the benefits of later adopting an ORM - like Sequelise
 The model is also extended to include 3 tables: users, articles and comments
 A user can have many articles 1:N
 A user can have many comments 1:N

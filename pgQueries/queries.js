@@ -1,7 +1,9 @@
 import pg_pool from "./connectPool.js";
 
+// Note: This fn is unused and does not add all the necessary fields
+// ...canditiate for deletion
 export async function addUser(user) {
-  console.log("user", user);
+  console.log("Adding user", user);
   try {
     let result = await pg_pool.query(
       `INSERT INTO users (first_name, last_name, email, member_type)\

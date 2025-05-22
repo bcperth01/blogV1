@@ -129,6 +129,11 @@ router.get("/signup", function (req, res, next) {
 router.post("/signup", async function (req, res, next) {
   //The form has mandatory fields username, email, password and confirm_password
   // Check that username does not already exist and that the passwords are the same
+  //NOTE: The users table has these fields
+  //      id, first_name,last_name,email,member_type,
+  //      salt, password,created_at, updated_at
+  //      we need to add member_type to the reg form,
+
   try {
     let goodNewUser = false;
     let err_msg = "";
@@ -186,8 +191,8 @@ router.post("/signup", async function (req, res, next) {
       let result = []; // to retrieve the users id in postgres, after save
       try {
         result = await pg_pool.query(
-          "INSERT INTO users (username, hashed_password, salt) VALUES ($1, $2, $3) RETURNING id",
-          [req.body.username, hashedPassword, salt]
+          "INSERT INTO users (first_name, last_name, member_type, email,username, hashed_password, salt) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+          [req.body.first_name,req.body.last_name,req.body.member_type,req.body.email,req.body.username, hashedPassword, salt]
         );
       } catch (err) {
         console.log("error saving new user", err);

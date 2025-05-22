@@ -6,7 +6,6 @@ import methodOverride from "method-override";
 import dotenv from "dotenv";
 import errorHandler from "./middleware/errorHandler.js";
 import pg_pool from "./pgQueries/connectPool.js"; // connection to PostGres
-import { createTables } from "./pgQueries/createTables.js";
 
 // For authentication using passport.js
 import passport from "passport";
