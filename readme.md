@@ -98,7 +98,7 @@ There are four **ejs** template files, all located in `/view/articles/` director
 5. Allow visitors to add comments to posts
 6. **(Done)** Add a nav bar with a Home Page and About Page
 7. Make the site responsive (maybe)
-8. Figure out how to deploy and do it
+8. Figure out how to deploy and then deploy..
 9. **(Done)** Remove sanitiseHTML attribute from the model - ie no longer to be in the Mongo table
    Instead calculate it on the fly for the "show" template.
 10. Add a `publish` status/workflow so that only published blogs can be seen by visitors

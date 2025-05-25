@@ -14,16 +14,18 @@ export async function createTables() {
     return "Tables Created OK";
   } catch (err) {
     console.log(err);
+    return "Tables NOT Created";
   }
 }
 
 // intended for single use during dev (see the route in /admin/dropTables)
 export async function dropTables() {
   try {
-    const result = await pg_pool.query("SELECT current_database()");
-    res.send(`The current database is "${result.rows[0].current_database}"`);
+    // if needed, put the appropriate SQL here to drop all tables
+    return "All tables dropped OK"
   } catch (err) {
     console.log(err);
+    return "Tables NOT Dropped";
   }
 }
 

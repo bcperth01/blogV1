@@ -1,9 +1,11 @@
 import express from "express";
 import pg_pool from "../pgQueries/connectPool.js";
+import { createTables, dropTables } from "../pgQueries/createTables.js";
+import { getAllUsers } from "../pgQueries/queries.js";
 
 const router = express.Router();
 
-// Test to see if postgres is running and connected
+// Test to see if postgres is running and connected - route /admin/testPG
 router.get("/testPG", async (req, res) => {
   try {
     const result = await pg_pool.query("SELECT current_database()");
@@ -15,20 +17,21 @@ router.get("/testPG", async (req, res) => {
   console.log(res.locals.loggedIn);
 });
 
-// Temporary routes used for setup
+// Once off route used for setup
 router.get("/createTables", async (req, res) => {
   try {
     const result = await createTables();
-    res.send(`Tables were created OK`);
+    res.send(result);
   } catch (err) {
     console.log(err);
   }
 });
 
+// Once off route used for setup
 router.get("/dropTables", async (req, res) => {
   try {
-    const result = await pg_pool.query("SELECT current_database()");
-    res.send(`The current database is "${result.rows[0].current_database}"`);
+    const result = await dropTables();
+    res.send(result);
   } catch (err) {
     console.log(err);
   }
@@ -36,11 +39,17 @@ router.get("/dropTables", async (req, res) => {
 
 router.get("/getAllUsers", async (req, res) => {
   try {
-    const result = await getAllUsers(); // an array of objects
-    console.log("GetAllUsers result", result);
-    res.send(result);
+    const users = await getAllUsers(); // an array of objects
+    let none_msg = users.length === 0?"Users table is empty":""
+    console.log("All users", users);
+    res.render("auth/manageUsers", {
+      users,
+      res: res.locals,
+      none_msg,
+    });
   } catch (error) {
-    console.log("error reading users");
+    console.log("error displaying users",error);
+    res.send("error displaying users")
   }
 });
 

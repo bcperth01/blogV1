@@ -24,6 +24,7 @@ export async function getUser() {}
 
 // get every record in the users table
 export async function getAllUsers() {
+  console.log("Getting users")
   try {
     let response = await pg_pool.query(`Select * from  users`);
     return response.rows;
