@@ -1,7 +1,6 @@
 import express from "express";
 import pg_pool from "../pgQueries/connectPool.js";
 import { createTables, dropTables } from "../pgQueries/createTables.js";
-import { getAllUsers } from "../pgQueries/queries.js";
 
 const router = express.Router();
 
@@ -34,22 +33,6 @@ router.get("/dropTables", async (req, res) => {
     res.send(result);
   } catch (err) {
     console.log(err);
-  }
-});
-
-router.get("/getAllUsers", async (req, res) => {
-  try {
-    const users = await getAllUsers(); // an array of objects
-    let none_msg = users.length === 0?"Users table is empty":""
-    console.log("All users", users);
-    res.render("auth/manageUsers", {
-      users,
-      res: res.locals,
-      none_msg,
-    });
-  } catch (error) {
-    console.log("error displaying users",error);
-    res.send("error displaying users")
   }
 });
 

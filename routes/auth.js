@@ -2,6 +2,7 @@ import express from "express";
 import passport from "passport";
 import localStrategy from "passport-local";
 import crypto from "crypto";
+import { getAllUsers } from "../pgQueries/queries.js";
 
 import pg_pool from "../pgQueries/connectPool.js";
 
@@ -156,7 +157,7 @@ router.post("/signup", async function (req, res, next) {
           err_msg = `Passwords don't match or not at least 8 chars`;
         }
       } else {
-        err_msg = `Existing account with suplied email`;
+        err_msg = `Supplied email not available`;
       }
     } else {
       err_msg = `username "${req.body.username}" not available`;
@@ -211,6 +212,22 @@ router.post("/signup", async function (req, res, next) {
       });
     }
   );
+});
+
+router.get("/getAllUsers", async (req, res) => {
+  try {
+    const users = await getAllUsers(); // an array of objects
+    let none_msg = users.length === 0?"Users table is empty":""
+    console.log("All users", users);
+    res.render("auth/manageUsers", {
+      users,
+      res: res.locals,
+      none_msg,
+    });
+  } catch (error) {
+    console.log("error displaying users",error);
+    res.send("error displaying users")
+  }
 });
 
 export default router;
