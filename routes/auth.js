@@ -83,7 +83,7 @@ passport.deserializeUser(function (user, cb) {
 // Apply the passport middleware
 passport.use(new localStrategy(verifyUser));
 
-// This route displays the login form
+// This route displays the login form.
 // If there has been previous login failures,
 // req.session.messages[] will have an array of failure messages
 // The session is replaced with a new session after a successful login
@@ -125,6 +125,23 @@ router.get("/signup", function (req, res, next) {
     form: req.query.form ? JSON.parse(decodeURIComponent(req.query.form)) : {},
     res: res.locals,
   });
+});
+
+// Presents the admin screen (for now manege users)
+router.get("/admin", async function (req, res, next) {
+  try {
+    const users = await getAllUsers(); // an array of objects
+    let none_msg = users.length === 0?"Users table is empty":""
+    console.log("All users", users);
+    res.render("auth/manageUsers", {
+      users,
+      res: res.locals,
+      none_msg,
+    });
+  } catch (error) {
+    console.log("error displaying users",error);
+    res.send("error displaying users")
+  }
 });
 
 router.post("/signup", async function (req, res, next) {
@@ -178,6 +195,7 @@ router.post("/signup", async function (req, res, next) {
   }
 
   // If we reach here we are good to add the new user
+  // Note: For now we are forcing status "active" and verified "verified"
   var salt = crypto.randomBytes(16);
   crypto.pbkdf2(
     req.body.password,
@@ -192,8 +210,8 @@ router.post("/signup", async function (req, res, next) {
       let result = []; // to retrieve the users id in postgres, after save
       try {
         result = await pg_pool.query(
-          "INSERT INTO users (first_name, last_name, member_type, email,username, hashed_password, salt) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
-          [req.body.first_name,req.body.last_name,req.body.member_type,req.body.email,req.body.username, hashedPassword, salt]
+          "INSERT INTO users (status, verified,first_name, last_name, member_type, email,username, hashed_password, salt) VALUES ($1, $2, $3, $4, $5, $6, $7,$8,$9) RETURNING id",
+          ["active", "verified",req.body.first_name,req.body.last_name,req.body.member_type,req.body.email,req.body.username, hashedPassword, salt]
         );
       } catch (err) {
         console.log("error saving new user", err);
@@ -212,22 +230,6 @@ router.post("/signup", async function (req, res, next) {
       });
     }
   );
-});
-
-router.get("/getAllUsers", async (req, res) => {
-  try {
-    const users = await getAllUsers(); // an array of objects
-    let none_msg = users.length === 0?"Users table is empty":""
-    console.log("All users", users);
-    res.render("auth/manageUsers", {
-      users,
-      res: res.locals,
-      none_msg,
-    });
-  } catch (error) {
-    console.log("error displaying users",error);
-    res.send("error displaying users")
-  }
 });
 
 export default router;

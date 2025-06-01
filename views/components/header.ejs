@@ -34,6 +34,11 @@
             >Articles</a
           >
         </li>
+        <% if (res.loggedIn && res.member_type === "admin") { %>
+          <li class="nav-item">
+            <a class="nav-link" aria-current="page" href="/auth/admin">Admin</a>
+          </li>
+        <% } %>
       </ul>
       <form class="d-flex" role="search">
         <input

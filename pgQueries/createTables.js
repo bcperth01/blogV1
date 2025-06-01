@@ -30,6 +30,9 @@ export async function dropTables() {
 }
 
 // Note: INSERT INTO my_table (id, name) VALUES (uuid_generate_v4(), 'My Name'); is how to work with uuids
+// Note: member_type can be admin|user|public
+// Note: status can be active|suspended|pending
+// Note: verified can be verified|unverified|pending
 const createUsersTable =
   "CREATE TABLE IF NOT EXISTS users (\
     id                  uuid PRIMARY KEY DEFAULT uuid_generate_v4(),\
@@ -38,6 +41,8 @@ const createUsersTable =
     username            varchar(80),\
     email               varchar(80),\
     member_type         varchar(16),\
+    verified            varchar(16.\
+    status              varchar(16),\
     salt                bytea,\
     hashed_password     bytea,\
     created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),\
