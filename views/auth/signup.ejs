@@ -6,13 +6,18 @@
   <body>
     <!-- container for header -->
     <div class="container"><%- include('../components/header') %></div>
+    <% if(res.loggedIn && (res.member_type === "member" ||
+    res.member_type === "admin")) {%>
     <!-- container for page -->
-    <div class="container pt-5 mt-5">
+      <div class="container pt-4 mt-4">
+    <%} else { %>
+      <div class="container pt-5 mt-5"></div>
+    <%} %>
       <!-- One outer row - whose contents will be centered-->
       <div class="row justify-content-center">
         <!-- Inner fixed width row with border -->
         <div
-          style="width: 450px"
+          style="width: 500px"
           class="border border-primary border-3 rounded-5 bg-light m1"
         >
           <!-- inner div to contain the form -->
@@ -26,15 +31,15 @@
           >
             <!-- every row will have 2 columns with the first column 30px and the second 320px -->
             <div class="row mb-3">
-              <div style="width: 45px"></div>
+              <div style="width: 80px;"></div>
               <h2 class="col text-center">Register New User</h2>
             </div>
             <!-- This is the form -->
             <form class="flex" action="/auth/signup" method="post">
               <!-- First Name -->
               <section class="row mb-2">
-                <label style="width: 45px" for="first_name"
-                  ><svg
+                <label style="width: 80px; text-align: right;" for="first_name">
+                  <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
                     height="20"
@@ -59,7 +64,7 @@
               </section>
               <!-- Last Name -->
               <section class="row mb-2">
-                <label style="width: 45px" for="last_name"
+                <label style="width: 80px; text-align: right;" for="last_name"
                   ><svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
@@ -85,7 +90,7 @@
               </section>
               <!-- Email -->
               <section class="row mb-2">
-                <label style="width: 45px" for="email">
+                <label style="width: 80px; text-align: right;" for="email">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
@@ -110,31 +115,45 @@
                   value="<%=form.email || ''%>"
                 />
               </section>
-              <!-- Member Type (Role) -->
-              <section class="row mb-2">
-                <label style="width: 45px" for="member-type"
-                  ><svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    fill="currentColor"
-                    class="bi bi-tools"
-                    viewBox="0 0 16 16"
-                  >
-                    <path
-                      d="M1 0 0 1l2.2 3.081a1 1 0 0 0 .815.419h.07a1 1 0 0 1 .708.293l2.675 2.675-2.617 2.654A3.003 3.003 0 0 0 0 13a3 3 0 1 0 5.878-.851l2.654-2.617.968.968-.305.914a1 1 0 0 0 .242 1.023l3.27 3.27a.997.997 0 0 0 1.414 0l1.586-1.586a.997.997 0 0 0 0-1.414l-3.27-3.27a1 1 0 0 0-1.023-.242L10.5 9.5l-.96-.96 2.68-2.643A3.005 3.005 0 0 0 16 3q0-.405-.102-.777l-2.14 2.141L12 4l-.364-1.757L13.777.102a3 3 0 0 0-3.675 3.68L7.462 6.46 4.793 3.793a1 1 0 0 1-.293-.707v-.071a1 1 0 0 0-.419-.814zm9.646 10.646a.5.5 0 0 1 .708 0l2.914 2.915a.5.5 0 0 1-.707.707l-2.915-2.914a.5.5 0 0 1 0-.708M3 11l.471.242.529.026.287.445.445.287.026.529L5 13l-.242.471-.026.529-.445.287-.287.445-.529.026L3 15l-.471-.242L2 14.732l-.287-.445L1.268 14l-.026-.529L1 13l.242-.471.026-.529.445-.287.287-.445.529-.026z"
-                    />
-                  </svg>
-                </label>
-                <select class="col" name="member_type" id="member_type">
-                  <option value="public">Public</option>
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </section>
+              <% if(res.loggedIn && (res.member_type === "member" ||
+              res.member_type === "admin")) {%>
+                <!-- Member Type (Role) -->
+                <section class="row mb-2">
+                  <label style="width: 80px; text-align: right;" for="member-type">
+                    Role
+                  </label>
+                  <select class="col" name="member_type" id="member_type">
+                    <option value="public" selected ="selected">Public</option>
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </section>
+                <!-- verified (verified|unverified|pending)-->
+                <section class="row mb-2">
+                  <label style="width: 80px; text-align: right;" for="member-type">
+                    Verified
+                  </label>
+                  <select class="col" name="verified" id="verified">
+                    <option value="verified">Verified</option>
+                    <option value="unverified" selected ="selected">Unverified</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                </section>
+                <!-- Status (active|suspended|pending)-->
+                <section class="row mb-2">
+                  <label style="width: 80px; text-align: right;" for="member-type">
+                    Status
+                  </label>
+                  <select class="col" name="status" id="status">
+                   <option value="active">Active</option>
+                    <option value="suspended">Suspended</option>
+                    <option value="pending" selected ="selected">Pending</option>
+                  </select>
+                </section>
+              <% } %>
               <!-- Username (for login) -->
               <section class="row mb-2">
-                <label style="width: 45px" for="username"
+                <label style="width: 80px; text-align: right;" for="username"
                   ><svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
@@ -164,7 +183,7 @@
               </section>
               <!-- Password -->
               <section class="row mb-2">
-                <label style="width: 45px" for="password"
+                <label style="width: 80px; text-align: right;" for="password"
                   ><svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
@@ -191,7 +210,7 @@
               </section>
               <!-- Confirm Password -->
               <section class="row mb-2">
-                <label style="width: 45px" for="confirm_password"
+                <label style="width: 80px; text-align: right;" for="confirm_password"
                   ><svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
@@ -218,20 +237,20 @@
               </section>
               <% if (err_msg !== "") { %>
               <section class="row">
-                <div style="width: 45px"></div>
+                <div style="width: 80px; text-align: right;"></div>
                 <div class="col text-danger">
                   <small><%= err_msg %></small>
                 </div>
               </section>
               <% } %>
               <section class="row mb-2 pt-1">
-                <div style="width: 45px"></div>
+                <div style="width: 80px; text-align: right;"></div>
                 <button class="col btn btn-primary" type="submit">
                   Sign up
                 </button>
               </section>
               <section class="row">
-                <div style="width: 45px"></div>
+                <div style="width: 80px; text-align: right;"></div>
                 <div class="col">
                   Already have a login?<span class="px-3"
                     ><a href="/auth/login">Login</a></span
