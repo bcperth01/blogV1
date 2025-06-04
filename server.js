@@ -1,7 +1,7 @@
 import express from "express";
 import articlesRouter from "./routes/articles.js";
 import authRouter from "./routes/auth.js";
-import adminRouter from "./routes/admin.js";
+import setupRouter from "./routes/setup.js"; // for routes only used to setup/test the system
 import methodOverride from "method-override";
 import dotenv from "dotenv";
 import errorHandler from "./middleware/errorHandler.js";
@@ -62,7 +62,7 @@ app.use((req, res, next) => {
 // Routers
 app.use("/auth", authRouter); // routes will look like /login
 app.use("/articles", articlesRouter);
-app.use("/admin", adminRouter);
+app.use("/setup", setupRouter);
 
 // Home Page redirected - because its implemented as an article
 app.get("/", async (req, res, next) => {

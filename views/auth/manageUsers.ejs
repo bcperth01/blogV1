@@ -35,10 +35,10 @@
               <td><%=user.email%></td>
               <td><%=user.member_type%></td>
               <td>              
-                <a href="#" class ="btn btn-dark">
+                <a href="/auth/edit?id=<%=user.id%>" class ="btn btn-dark">
                   <i class="bi bi-pencil"></i>
                 </a>
-                <a href="#" class ="btn btn-danger">
+                <a href="delete:id=<%=user.id%>" class ="btn btn-danger">
                   <i class="bi bi-trash"></i>
                 </a>
               </td>

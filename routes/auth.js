@@ -118,16 +118,9 @@ router.get("/logout", function (req, res, next) {
   });
 });
 
-// Presents the signup screen
-router.get("/signup", function (req, res, next) {
-  res.render("auth/signup", {
-    err_msg: req.query.err_msg ? req.query.err_msg : "",
-    form: req.query.form ? JSON.parse(decodeURIComponent(req.query.form)) : {},
-    res: res.locals,
-  });
-});
 
-// Presents the admin screen (for now manege users)
+
+// Presents the admin screen (for now manage users)
 router.get("/admin", async function (req, res, next) {
   try {
     const users = await getAllUsers(); // an array of objects
@@ -144,13 +137,61 @@ router.get("/admin", async function (req, res, next) {
   }
 });
 
+// The signup GET route presents the signup screen
+router.get("/signup", function (req, res, next) {
+  res.render("auth/signup", {
+    err_msg: req.query.err_msg ? req.query.err_msg : "",
+    form: req.query.form ? JSON.parse(decodeURIComponent(req.query.form)) : {},
+    res: res.locals,
+  });
+});
+
+// Consider the complexity of using the same form to edit an existing user and create a new user
+// a) New user form displays either 
+//    - an empty form or
+//    - a partly prefilled form to handle password and pre-existing username/email errors
+//      where the form data is passed in req.query.form
+// b) Edit user displays existing data for editing
+//    The editing situations need to be:
+//    - user admin edits status/registered fields for ANY user (to suspend or activate the user)
+//      also edits ANY user's profile data
+//    - Any user edits their own profile data (but not status/registered fields)
+//    Question: Should it be allowed to change username/email?
+//              - This should be fine ae long as:
+//                  a) the new username/email is not already in use
+//                  b) user id, is used to link articles and comments (not username/email)
+//    Comment: In order to check for isername/email clashes we need to know if these fields have changed
+
+//    Problems:
+//    - How to present existing data to the edit form?
+//    - How to determine what fields have been edited?
+
+// The edit GET route uses the signup form to display the existing record to be edited
+// The user id is sent to edit GET as a parameter   
+router.get("/edit", async function(req, res, next){
+  let result = await pg_pool.query(
+    "select * from users where id = $1",
+    [req.query.id]
+  );
+  console.log("edit activated", result.rows[0]);
+
+  res.render("auth/signup", {
+    err_msg: req.query.err_msg ? req.query.err_msg : "",
+    form: result.rows[0],
+    res: res.locals,
+  });
+
+});
+
+
+
+// The signup POST route saves the registration data
 router.post("/signup", async function (req, res, next) {
   //The form has mandatory fields username, email, password and confirm_password
   // Check that username does not already exist and that the passwords are the same
   //NOTE: The users table has these fields
-  //      id, first_name,last_name,email,member_type,
+  //      id, first_name,last_name,email,member_type,verified, status,
   //      salt, password,created_at, updated_at
-  //      we need to add member_type to the reg form,
 
   try {
     let goodNewUser = false;
