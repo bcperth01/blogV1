@@ -138,11 +138,13 @@ router.get("/admin", async function (req, res, next) {
 });
 
 // The signup GET route presents the signup screen
+// Note: the same signup form is used to create new users and edit existing users
 router.get("/signup", function (req, res, next) {
   res.render("auth/signup", {
     err_msg: req.query.err_msg ? req.query.err_msg : "",
     form: req.query.form ? JSON.parse(decodeURIComponent(req.query.form)) : {},
     res: res.locals,
+    type: "new", // tells the signup form that this is a new user
   });
 });
 
@@ -174,11 +176,12 @@ router.get("/edit", async function(req, res, next){
     [req.query.id]
   );
   console.log("edit activated", result.rows[0]);
-
+  // Note: the same signup form is used to create new users and edit existing users
   res.render("auth/signup", {
     err_msg: req.query.err_msg ? req.query.err_msg : "",
     form: result.rows[0],
     res: res.locals,
+    type: "edit", // tells the signup form we're editing an existing user
   });
 
 });
