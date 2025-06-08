@@ -118,9 +118,8 @@ router.get("/logout", function (req, res, next) {
   });
 });
 
-
-
-// Presents the admin screen (for now manage users)
+// Presents the admin screen - so far this screen allows users to be managed
+// Later need to add functions to manage documents and comments
 router.get("/admin", async function (req, res, next) {
   try {
     const users = await getAllUsers(); // an array of objects
@@ -137,10 +136,16 @@ router.get("/admin", async function (req, res, next) {
   }
 });
 
+/**
+ * Note: The "editUser" form can be activated from 3 places
+ * 1. Via the /auth/signup route for a new user registering
+ * 2. Via the "Add New User" button for the admin user from the /auth/admin route
+ * 3. Via the "edit" buttons in the user list display by /auth/route (to edit an existing user)
+ */
 // The signup GET route presents the signup screen
 // Note: the same signup form is used to create new users and edit existing users
 router.get("/signup", function (req, res, next) {
-  res.render("auth/signup", {
+  res.render("auth/editUser", {
     err_msg: req.query.err_msg ? req.query.err_msg : "",
     form: req.query.form ? JSON.parse(decodeURIComponent(req.query.form)) : {},
     res: res.locals,
@@ -148,25 +153,16 @@ router.get("/signup", function (req, res, next) {
   });
 });
 
-// Consider the complexity of using the same form to edit an existing user and create a new user
-// a) New user form displays either 
-//    - an empty form or
-//    - a partly prefilled form to handle password and pre-existing username/email errors
-//      where the form data is passed in req.query.form
-// b) Edit user displays existing data for editing
-//    The editing situations need to be:
-//    - user admin edits status/registered fields for ANY user (to suspend or activate the user)
-//      also edits ANY user's profile data
-//    - Any user edits their own profile data (but not status/registered fields)
-//    Question: Should it be allowed to change username/email?
-//              - This should be fine ae long as:
-//                  a) the new username/email is not already in use
-//                  b) user id, is used to link articles and comments (not username/email)
-//    Comment: In order to check for isername/email clashes we need to know if these fields have changed
-
-//    Problems:
-//    - How to present existing data to the edit form?
-//    - How to determine what fields have been edited?
+// The addUser GET route presents the signup screen
+// Note: the same signup form is used to create new users and edit existing users
+router.get("/addUser", function (req, res, next) {
+  res.render("auth/editUser", {
+    err_msg: req.query.err_msg ? req.query.err_msg : "",
+    form: req.query.form ? JSON.parse(decodeURIComponent(req.query.form)) : {},
+    res: res.locals,
+    type: "new", // tells the signup form that this is a new user
+  });
+});
 
 // The edit GET route uses the signup form to display the existing record to be edited
 // The user id is sent to edit GET as a parameter   
@@ -176,8 +172,7 @@ router.get("/edit", async function(req, res, next){
     [req.query.id]
   );
   console.log("edit activated", result.rows[0]);
-  // Note: the same signup form is used to create new users and edit existing users
-  res.render("auth/signup", {
+  res.render("auth/editUser", {
     err_msg: req.query.err_msg ? req.query.err_msg : "",
     form: result.rows[0],
     res: res.locals,
@@ -186,7 +181,18 @@ router.get("/edit", async function(req, res, next){
 
 });
 
-
+// Cancel of the form can be done from either a new signup or an existing user edit situation
+router.get("/cancel", function (req,res,next){
+  console.log("**************")
+  console.log(req.rawHeaders)
+  let index = req.rawHeaders.findIndex((element)=> element==="Referer")
+  console.log('index',index)
+  if (req.rawHeaders[index+1].includes("auth/edit") || req.rawHeaders[index+1].includes("auth/addUser")){
+      res.redirect("admin");
+  } else {
+      res.redirect("/");
+  }
+})
 
 // The signup POST route saves the registration data
 router.post("/signup", async function (req, res, next) {
