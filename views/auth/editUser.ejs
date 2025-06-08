@@ -264,16 +264,15 @@
                 <button class="btn btn-outline-primary" type="submit" formnovalidate formaction = "/auth/cancel" formmethod = "get">
                   Cancel
                 </button>
-
               </section>
-              <section class="row">
-                <div style="width: 80px; text-align: right;"></div>
-                <div class="col">
-                  Already have a login?<span class="px-3"
-                    ><a href="/auth/login">Login</a></span
-                  >
-                </div>
-              </section>
+              <% if(!res.loggedIn) { %>
+                <section class="row">
+                  <div style="width: 80px; text-align: right;"></div>
+                  <div class="col">
+                    Already have a login?<span class="px-3"><a href="/auth/login">Login</a></span>
+                  </div>
+                </section>
+              <% } %>
             </form>
           </div>
         </div>

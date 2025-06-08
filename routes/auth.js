@@ -124,7 +124,7 @@ router.get("/admin", async function (req, res, next) {
   try {
     const users = await getAllUsers(); // an array of objects
     let none_msg = users.length === 0?"Users table is empty":""
-    console.log("All users", users);
+    // console.log("All users", users);
     res.render("auth/manageUsers", {
       users,
       res: res.locals,
@@ -180,6 +180,19 @@ router.get("/edit", async function(req, res, next){
   });
 
 });
+
+// The delete GET route
+router.get("/delete", async function (req, res, next){
+  console.log("id",req.query.id, "username",req.query.username)
+  let result = await pg_pool.query(
+    "delete from users where id = $1",
+    [req.query.id]
+  );
+  console.log("result",result)
+  res.redirect("admin");
+})
+
+// The deleteConfirm PUT route
 
 // Cancel of the form can be done from either a new signup or an existing user edit situation
 router.get("/cancel", function (req,res,next){
