@@ -45,6 +45,22 @@
             <!-- This is the form (Note: "action" attribute is in the submit buttons below)-->
             <!-- Note: Buttons below have "formaction" and "formmethod" attributes-->
             <form class="flex">
+              <!-- Show the user id when editing an existing user-->
+              <% if(type !== "new") { %>
+                <section class="row mb-2">
+                  <label style="width: 80px; text-align: right;" for="id">
+                    id
+                  </label>
+                  <input
+                    class="col"
+                    style="background-color: lightgray;"
+                    id="id"
+                    name="id"
+                    readonly
+                    value="<%=form.id ||''%>"
+                  />
+                </section>
+              <% } %>
               <!-- First Name -->
               <section class="row mb-2">
                 <label style="width: 80px; text-align: right;" for="first_name">
@@ -184,10 +200,9 @@
                   id="username"
                   name="username"
                   type="username"
-                  autocomplete="username"
                   placeholder="Username *"
                   required
-                  value="<%=form.username%>"
+                  value="<%=form.username || ''%>"
                 />
               </section>
               <!-- Password -->
@@ -214,7 +229,7 @@
                   autocomplete="password"
                   placeholder="Password *"
                   required
-                  value="<%=form.password  || ''%>"
+                  value="<%=form.password || ''%>"
                 />
               </section>
               <!-- Confirm Password -->
@@ -233,16 +248,27 @@
                     />
                   </svg>
                 </label>
-                <input
-                  class="col ml-1"
-                  id="confirm_password"
-                  name="confirm_password"
-                  type="password"
-                  autocomplete="new_password"
-                  placeholder="Confirm Password *"
-                  required
-                  value="<%=form.confirm_password || ''%>"
-                />
+                <% if(type ==="new") { %>
+                  <input
+                    class="col ml-1"
+                    id="confirm_password"
+                    name="confirm_password"
+                    type="password"
+                    autocomplete="new_password"
+                    placeholder="Confirm Password *"
+                    required
+                    value="<%=form.confirm_password || ''%>"
+                  />
+                <% } else { %>
+                  <input
+                    class="col ml-1"
+                    id="confirm_password"
+                    name="confirm_password"
+                    type="password"
+                    required
+                    value="<%=form.password || ''%>"
+                  />
+                <% } %>  
               </section>
               <% if (err_msg !== "") { %>
               <section class="row">
@@ -254,11 +280,10 @@
               <% } %>
               <section class="d-flex flex-row mb-1 justify-content-evenly">
                 <div class="w-20"></div>
-                <button class="btn btn-primary" type="submit" formaction = "/auth/signup" formmethod = "post">
                   <% if(type==="new") { %>
-                    Sign up
+                    <button class="btn btn-primary" type="submit" formaction = "/auth/signup" formmethod = "post">Sign up</button>
                   <% } else { %>
-                    Save Changes
+                    <button class="btn btn-primary" type="submit" formaction = "/auth/edit" formmethod = "post">Save Changes</button> 
                   <% } %>
                 </button>
                 <button class="btn btn-outline-primary" type="submit" formnovalidate formaction = "/auth/cancel" formmethod = "get">

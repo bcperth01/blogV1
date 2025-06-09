@@ -151,7 +151,7 @@ router.get("/signup", function (req, res, next) {
     res: res.locals,
     type: "new", // tells the signup form that this is a new user
   });
-});
+}); // see POST method below for when a new user is being saved
 
 // The addUser GET route presents the signup screen
 // Note: the same signup form is used to create new users and edit existing users
@@ -179,7 +179,8 @@ router.get("/edit", async function(req, res, next){
     type: "edit", // tells the signup form we're editing an existing user
   });
 
-});
+}); // see POST method below for when an existing user is being edited
+
 
 // The delete GET route
 router.get("/delete", async function (req, res, next){
@@ -192,7 +193,7 @@ router.get("/delete", async function (req, res, next){
   res.redirect("admin");
 })
 
-// The deleteConfirm PUT route
+// TODO: The deleteConfirm PUT route
 
 // Cancel of the form can be done from either a new signup or an existing user edit situation
 router.get("/cancel", function (req,res,next){
@@ -205,6 +206,16 @@ router.get("/cancel", function (req,res,next){
   } else {
       res.redirect("/");
   }
+})
+
+// POST edit saves changes to an existing user
+router.post("/edit", async (req, res, next)=>{
+  let result = await pg_pool.query(
+    "select * from users where id = $1",
+    [req.body.id]
+  );
+  console.log(result[0])
+  res.redirect("/")
 })
 
 // The signup POST route saves the registration data
