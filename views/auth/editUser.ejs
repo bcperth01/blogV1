@@ -57,7 +57,7 @@
                     id="id"
                     name="id"
                     readonly
-                    value="<%=form.id ||''%>"
+                    value="<%=form1.id ||''%>"
                   />
                 </section>
               <% } %>
@@ -84,7 +84,7 @@
                   type="text"
                   autocomplete="first_name"
                   placeholder="First Name"
-                  value="<%=form.first_name ||''%>"
+                  value="<%=form1.first_name ||''%>"
                 />
               </section>
               <!-- Last Name -->
@@ -110,7 +110,7 @@
                   type="text"
                   autocomplete="last_name"
                   placeholder="Last Name"
-                  value="<%=form.last_name || ''%>"
+                  value="<%=form1.last_name || ''%>"
                 />
               </section>
               <!-- Email -->
@@ -137,7 +137,7 @@
                   autocomplete="email"
                   placeholder="Email *"
                   required
-                  value="<%=form.email || ''%>"
+                  value="<%=form1.email || ''%>"
                 />
               </section>
               <% if(res.loggedIn && (res.member_type === "member" ||
@@ -195,15 +195,27 @@
                     />
                   </svg>
                 </label>
-                <input
-                  class="col"
-                  id="username"
-                  name="username"
-                  type="username"
-                  placeholder="Username *"
-                  required
-                  value="<%=form.username || ''%>"
+                <% if(form1.username && form1.username.length > 1) { %>
+                 <input
+                    class="col"
+                    id="username"
+                    name="username"
+                    type="text"
+                    placeholder="Username *"
+                    required
+                    value="<%=form1.username%>"
                 />
+                <% } else { %>
+                  <input
+                    class="col"
+                    id="username"
+                    name="username"
+                    type="text"
+                    placeholder="Username *"
+                    value = "-"
+                    required
+                  />
+                <% } %>
               </section>
               <!-- Password -->
               <section class="row mb-2">
@@ -229,7 +241,7 @@
                   autocomplete="password"
                   placeholder="Password *"
                   required
-                  value="<%=form.password || ''%>"
+                  value="<%=form1.password || ''%>"
                 />
               </section>
               <!-- Confirm Password -->
@@ -257,7 +269,7 @@
                     autocomplete="new_password"
                     placeholder="Confirm Password *"
                     required
-                    value="<%=form.confirm_password || ''%>"
+                    value="<%=form1.confirm_password || ''%>"
                   />
                 <% } else { %>
                   <input
@@ -265,8 +277,9 @@
                     id="confirm_password"
                     name="confirm_password"
                     type="password"
+                    placeholder="Confirm Password *"
                     required
-                    value="<%=form.password || ''%>"
+                    value="<%=form1.password || ''%>"
                   />
                 <% } %>  
               </section>

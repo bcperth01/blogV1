@@ -145,9 +145,11 @@ router.get("/admin", async function (req, res, next) {
 // The signup GET route presents the signup screen
 // Note: the same signup form is used to create new users and edit existing users
 router.get("/signup", function (req, res, next) {
+  let form1 = req.query.form ? JSON.parse(decodeURIComponent(req.query.form)) : {}
+  console.log("form1 = ",form1);
   res.render("auth/editUser", {
     err_msg: req.query.err_msg ? req.query.err_msg : "",
-    form: req.query.form ? JSON.parse(decodeURIComponent(req.query.form)) : {},
+    form1: form1,
     res: res.locals,
     type: "new", // tells the signup form that this is a new user
   });
@@ -156,9 +158,11 @@ router.get("/signup", function (req, res, next) {
 // The addUser GET route presents the signup screen
 // Note: the same signup form is used to create new users and edit existing users
 router.get("/addUser", function (req, res, next) {
+  let form1 = req.query.form ? JSON.parse(decodeURIComponent(req.query.form)) : {}
+  console.log("form1 = ",form1);
   res.render("auth/editUser", {
     err_msg: req.query.err_msg ? req.query.err_msg : "",
-    form: req.query.form ? JSON.parse(decodeURIComponent(req.query.form)) : {},
+    form1:form1,
     res: res.locals,
     type: "new", // tells the signup form that this is a new user
   });
@@ -174,7 +178,7 @@ router.get("/edit", async function(req, res, next){
   console.log("edit activated", result.rows[0]);
   res.render("auth/editUser", {
     err_msg: req.query.err_msg ? req.query.err_msg : "",
-    form: result.rows[0],
+    form1: result.rows[0],
     res: res.locals,
     type: "edit", // tells the signup form we're editing an existing user
   });
@@ -209,6 +213,7 @@ router.get("/cancel", function (req,res,next){
 })
 
 // POST edit saves changes to an existing user
+// IN PROGRESS
 router.post("/edit", async (req, res, next)=>{
   let result = await pg_pool.query(
     "select * from users where id = $1",
@@ -268,6 +273,11 @@ router.post("/signup", async function (req, res, next) {
     return next(err);
   }
 
+  // res.locals.loggedIn = req.isAuthenticated();
+  // res.locals.username = req.isAuthenticated() ? req.user.username : "";
+  // res.locals.member_type = req.isAuthenticated() ? req.user.member_type : "";
+  // res.locals.id = req.isAuthenticated() ? req.user.id : "";
+
   // If we reach here we are good to add the new user
   // Note: For now we are forcing status "active" and verified "verified"
   var salt = crypto.randomBytes(16);
@@ -283,25 +293,39 @@ router.post("/signup", async function (req, res, next) {
       }
       let result = []; // to retrieve the users id in postgres, after save
       try {
-        result = await pg_pool.query(
-          "INSERT INTO users (status, verified,first_name, last_name, member_type, email,username, hashed_password, salt) VALUES ($1, $2, $3, $4, $5, $6, $7,$8,$9) RETURNING id",
-          ["active", "verified",req.body.first_name,req.body.last_name,req.body.member_type,req.body.email,req.body.username, hashedPassword, salt]
-        );
+        if (res.locals.loggedIn || res.locals.member_type === "admin") {
+          // only the admin user can upgrade role and status
+          result = await pg_pool.query(
+            "INSERT INTO users (status, verified,member_type,first_name, last_name,  email,username, hashed_password, salt) VALUES ($1, $2, $3, $4, $5, $6, $7,$8,$9) RETURNING id",
+            [req.body.status, req.body.verified,req.body.member_type,req.body.first_name,req.body.last_name,req.body.email,req.body.username, hashedPassword, salt]
+          ) ;
+        } else {
+          // a general user gets the lowest status and role when signing up
+          result = await pg_pool.query(
+            "INSERT INTO users (status, verified,member_type,first_name, last_name,  email,username, hashed_password, salt) VALUES ($1, $2, $3, $4, $5, $6, $7,$8,$9) RETURNING id",
+            ["active", "verified","public",req.body.first_name,req.body.last_name,req.body.email,req.body.username, hashedPassword, salt]
+          );
+        } 
       } catch (err) {
         console.log("error saving new user", err);
         return next(err);
       }
-      // log the new user in automatically
-      const user = {
-        id: result.rows[0].id,
-        username: req.body.username,
-      };
-      req.login(user, function (err) {
-        if (err) {
-          return next(err);
-        }
-        res.redirect("/");
-      });
+      // if its a new user log him in automatically
+      if (!res.locals.loggedIn) {
+        const user = {
+          id: result.rows[0].id,
+          username: req.body.username,
+        };
+        req.login(user, function (err) {
+          if (err) {
+            return next(err);
+          } 
+          res.redirect("/");
+        });
+      } else {
+        // if its an admin user, redirect to the admin page
+        res.redirect("/auth/admin");
+      }
     }
   );
 });

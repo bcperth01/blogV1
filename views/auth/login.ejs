@@ -29,8 +29,13 @@
               <h2 class="col text-center">Login</h2>
             </div>
             <!-- This is the form -->
-            <form class="flex" action="/auth/login/password" method="post">
+            <form class="flex" action="/auth/login/password" method="post" autocomplete="off">
               <!-- Username (for login) -->
+              <!-- NOTE: If a value is not provided the browser auto-fills the last loggin user  -->
+              <!--    This is a bit disconcerting for security reason - so I use a value of "-"  -->
+              <!--    Also cant turn autocomplete off so browsers offers all previous logins  -->
+              <!--    This is very bad on a computer thats shared....  -->
+              <!--    Will need to find a workaround to block this behaviour  --> 
               <section class="row mb-2">
                 <label style="width: 45px" for="username"
                   ><svg
@@ -53,9 +58,9 @@
                   class="col"
                   id="username"
                   name="username"
-                  type="username"
-                  autocomplete="off"
+                  type="text"
                   placeholder="Username *"
+                  value ="-"
                   required
                 />
               </section>
@@ -80,8 +85,8 @@
                   id="password"
                   name="password"
                   type="password"
-                  autocomplete="off"
                   placeholder="Password *"
+                  value ="-"
                   required
                 />
               </section>
