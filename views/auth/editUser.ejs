@@ -240,8 +240,7 @@
                   type="password"
                   autocomplete="password"
                   placeholder="Password *"
-                  required
-                  value="<%=form1.password || ''%>"
+                  value=""
                 />
               </section>
               <!-- Confirm Password -->
@@ -260,28 +259,14 @@
                     />
                   </svg>
                 </label>
-                <% if(type ==="new") { %>
-                  <input
-                    class="col ml-1"
-                    id="confirm_password"
-                    name="confirm_password"
-                    type="password"
-                    autocomplete="new_password"
-                    placeholder="Confirm Password *"
-                    required
-                    value="<%=form1.confirm_password || ''%>"
-                  />
-                <% } else { %>
-                  <input
-                    class="col ml-1"
-                    id="confirm_password"
-                    name="confirm_password"
-                    type="password"
-                    placeholder="Confirm Password *"
-                    required
-                    value="<%=form1.password || ''%>"
-                  />
-                <% } %>  
+                <input
+                  class="col ml-1"
+                  id="confirm_password"
+                  name="confirm_password"
+                  type="password"
+                  placeholder="Confirm Password *"
+                  value=""
+                />
               </section>
               <% if (err_msg !== "") { %>
               <section class="row">

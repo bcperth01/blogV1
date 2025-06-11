@@ -201,8 +201,8 @@ router.get("/delete", async function (req, res, next){
 
 // Cancel of the form can be done from either a new signup or an existing user edit situation
 router.get("/cancel", function (req,res,next){
-  console.log("**************")
-  console.log(req.rawHeaders)
+  // console.log("**************")
+  // console.log(req.rawHeaders)
   let index = req.rawHeaders.findIndex((element)=> element==="Referer")
   console.log('index',index)
   if (req.rawHeaders[index+1].includes("auth/edit") || req.rawHeaders[index+1].includes("auth/addUser")){
@@ -219,7 +219,96 @@ router.post("/edit", async (req, res, next)=>{
     "select * from users where id = $1",
     [req.body.id]
   );
-  console.log(result[0])
+  console.log("***existing user",result.rows[0]);
+  console.log("***new user req.body",req.body);
+  // next check which if any fields are different
+  // for now we are allowing theses fields to be changed
+  // first_name, last_name, email, member_type, status, verified, password
+  let changed = false;
+  let SQLstring = `update users set `  
+  let WHEREclause = `where id = '${req.body.id}'`
+  if (req.body.first_name !== result.rows[0].first_name) {
+    SQLstring += `first_name = '${req.body.first_name}',`
+    changed = true;
+  }
+  if (req.body.last_name !== result.rows[0].last_name) {
+    SQLstring += `last_name = '${req.body.last_name}',`
+    changed = true;
+  }
+  if (req.body.username !== result.rows[0].username) {
+    SQLstring += `username = '${req.body.username}',`
+    changed = true;
+  }
+  if (req.body.email !== result.rows[0].email) {
+    SQLstring += `email = '${req.body.email}',`
+    changed = true;
+  }
+  if (req.body.member_type !== result.rows[0].member_type) {
+    SQLstring += `member_type = '${req.body.member_type}',`
+    changed = true;
+  }
+  if (req.body.status !== result.rows[0].status) {
+    SQLstring += `status = '${req.body.status}',`
+    changed = true;
+  }
+  if (req.body.verified !== result.rows[0].verified) {
+    SQLstring += `,verified = '${req.body.verified}',`
+    changed = true;
+  }
+  if (changed){
+    SQLstring += `updated_at = NOW() ` // always update the updated_at field
+    SQLstring += WHEREclause;
+    console.log("SQLstring",SQLstring);
+    try {
+      let result = await pg_pool.query(SQLstring);
+      console.log("result",result);
+      // if the password has changed, we need to hash it and save it
+      if (req.body.password && req.body.password.length > 7) {
+        var salt = crypto.randomBytes(16);
+        crypto.pbkdf2(
+          req.body.password,
+          salt,
+          310000,
+          32,
+          "sha256",
+          async function (err, hashedPassword) {
+            if (err) {
+              return next(err);
+            }
+            // update the password and salt
+            let result = await pg_pool.query(
+              "update users set hashed_password = $1, salt = $2 where id = $3",
+              [hashedPassword, salt, req.body.id]
+            );
+            console.log("result",result);
+          }
+        );
+      }
+      // if the user is logged in, update the session data
+      if (res.locals.loggedIn && res.locals.id === req.body.id) {
+        req.user.first_name = req.body.first_name;
+        req.user.last_name = req.body.last_name;
+        req.user.username = req.body.username;
+        req.user.email = req.body.email;
+        req.user.member_type = req.body.member_type;
+        req.user.status = req.body.status;
+        req.user.verified = req.body.verified;
+      }
+      // if the user is an admin, redirect to the admin page
+      if (res.locals.member_type === "admin") {
+        res.redirect("/auth/admin");
+        return;
+      }
+      // if the user is not an admin, redirect to the home page
+      res.redirect("/");
+      return;
+    } catch (err) {
+      console.log("error updating user", err);
+      return next(err);
+    }
+  } // end if changed
+  // if nothing has changed, redirect to the home page
+  console.log("No changes made to user");
   res.redirect("/")
 })
 
