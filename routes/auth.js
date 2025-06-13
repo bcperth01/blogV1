@@ -89,12 +89,19 @@ passport.use(new localStrategy(verifyUser));
 // NOTE: Every route is protected, to avoid reaching via direct url
 // ****************************************************************
 
-// route to display unauthorised access message
-router.get("/unauthorised", function (req, res, next) {
-  const err_msg = req.query.err_msg
+// Route to display:
+// - unauthorised access message
+// - advise if page does not exist
+// and to redirect the user to a different route
+router.get("/unauthorised", function (req, res, next) {  
+  const title = req.query.title ? req.query.title : "Unauthorised Access";
+  const err_msg = req.query.err_msg ? req.query.err_msg : "You are not authorised to access this page";
+  const route = req.query.route ? req.query.route : "/";
   res.render("auth/unauthorised", {
     err_msg,
     res: res.locals,
+    title,
+    route // the route to redirect to when the user clicks the button
   });
 });
 
@@ -102,12 +109,15 @@ router.get("/unauthorised", function (req, res, next) {
 // If there has been previous login failures,
 // req.session.messages[] will have an array of failure messages
 // The session is replaced with a new session after a successful login
-// Access: Block access if user is already logged in 
+// Security: Block access if user is already logged in
+//           TODO: Block if too many log-in attempts have been made
 router.get("/login", function (req, res, next) {
   if (req.user){
     // if the user is already logged in, redirect to unauthorised
     res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("You are already logged in"));
+      encodeURIComponent("You are already logged in") + "&title=" +
+      encodeURIComponent("Bad Route") + "&route=" +
+      encodeURIComponent("/"));
     return;
   }
   // res.redirect("/auth/unauthorised");
@@ -131,12 +141,14 @@ router.post(
 );
 
 // logs out the user and redirects to home
-// Allow access if the user is logged in
+// Security: Block access if user is not logged in
 router.get("/logout", function (req, res, next) {
   if (!req.isAuthenticated()) {
     // if the user is not logged in, redirect to unauthorised
     res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("You are not logged in"));
+      encodeURIComponent("You are not logged in") + "&title=" +
+      encodeURIComponent("Bad Route") + "&route=" +
+      encodeURIComponent("/"));
     return;
   }
   req.logout(function (err) {
@@ -153,7 +165,9 @@ router.get("/admin", async function (req, res, next) {
   if (!req.isAuthenticated() || res.locals.member_type !== "admin") {
     // if the user is not logged in or not an admin, redirect to unauthorised
     res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("You are not authorised to access this page"));
+      encodeURIComponent("You are not authorised for this page") + "&title=" +
+      encodeURIComponent("Not Authorised") + "&route=" +
+      encodeURIComponent("/"));
     return;
   }
   try {
@@ -175,11 +189,21 @@ router.get("/admin", async function (req, res, next) {
  * Note: The "editUser" form can be activated from 3 places
  * 1. Via the /auth/signup route for a new user registering
  * 2. Via the "Add New User" button for the admin user from the /auth/admin route
- * 3. Via the "edit" buttons in the user list display by /auth/route (to edit an existing user)
+ * 3. Via the "edit" buttons in the user list display by /auth/route (admin only)
+ * 4: Via a new route (TODO) to allow a user to edit their own profile
  */
-// The signup GET route presents the signup screen
-// Note: the same signup form is used to create new users and edit existing users
+
+// 1. Via the /auth/signup route for a new user registering
+// Security: Block this route if the user is logged in
 router.get("/signup", function (req, res, next) {
+  if (req.isAuthenticated()) {
+    // if the user is logged in then cant register again
+    res.redirect("/auth/unauthorised?err_msg=" +
+      encodeURIComponent("You are already registered") + "&title=" +
+      encodeURIComponent("Not Authorised") + "&route=" +
+      encodeURIComponent("/"));
+    return;
+  }
   let form1 = req.query.form ? JSON.parse(decodeURIComponent(req.query.form)) : {}
   console.log("form1 = ",form1);
   res.render("auth/editUser", {
@@ -190,13 +214,17 @@ router.get("/signup", function (req, res, next) {
   });
 }); // see POST method below for when a new user is being saved
 
-// The addUser GET route presents the signup screen
-// Note: the same signup form is used to create new users and edit existing users
+// 2. Via the "Add New User" button for the admin user from the /auth/admin route
+// Security: Block this route:
+//           - if the user is logged in and not an admin
+//           - if the user is not logged in
 router.get("/addUser", function (req, res, next) {
-  // if the user already has an account, redirect to unauthorised
-  if (req.isAuthenticated()) {
+  // if the user is not logged in or is an admin, redirect to unauthorised
+  if (!req.isAuthenticated() || (req.isAuthenticated() && res.locals.member_type !== "admin")) {
     res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("You are already registered and logged in"));
+      encodeURIComponent("Inaccessible Route") + "&title=" +
+      encodeURIComponent("Not Authorised") + "&route=" +
+      encodeURIComponent("/"));
     return;
   }
   let form1 = req.query.form ? JSON.parse(decodeURIComponent(req.query.form)) : {}
@@ -209,20 +237,38 @@ router.get("/addUser", function (req, res, next) {
   });
 });
 
-// The edit GET route uses the signup form to display the existing record to be edited
-// The user id is sent to edit GET as a parameter   
+// 3. Via the "edit" buttons in the user list display by /auth/route (to edit an existing user)
+// Security: Block this route:
+//           - if the user is not logged in as admin
 router.get("/edit", async function(req, res, next){
   // if the user is not logged in as admin, redirect to unauthorised
-  if (!(req.isAuthenticated() && res.locals.member_type !== "admin")) {
+  if (!(req.isAuthenticated() && res.locals.member_type === "admin")) {
     res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("You are not authorised to access this page"));
+      encodeURIComponent("Inaccessible Route") + "&title=" +
+      encodeURIComponent("Not Authorised") + "&route=" +
+      encodeURIComponent("/"));
+    return;
+  }
+  if (!req.query.id) {
+    // if no id is provided, redirect to unauthorised
+    res.redirect("/auth/unauthorised?err_msg=" +
+      encodeURIComponent("No user id provided") + "&title=" +
+      encodeURIComponent("Incomplete Route") + "&route=" +
+      encodeURIComponent("/"));
     return;
   }
   let result = await pg_pool.query(
     "select * from users where id = $1",
     [req.query.id]
   );
-  console.log("edit activated", result.rows[0]);
+  if (result.rowCount === 0) {
+    // if no user is found, redirect to unauthorised
+    res.redirect("/auth/unauthorised?err_msg=" +
+      encodeURIComponent("No user found with that id") + "&title=" +
+      encodeURIComponent("Not Found") + "&route=" +
+      encodeURIComponent("/"));
+    return;
+  }
   res.render("auth/editUser", {
     err_msg: req.query.err_msg ? req.query.err_msg : "",
     form1: result.rows[0],
@@ -234,10 +280,20 @@ router.get("/edit", async function(req, res, next){
 
 // The delete GET route
 router.get("/delete", async function (req, res, next){
-  // if the user is not logged in as admin, redirect to unauthorised
-  if (!(req.isAuthenticated() && res.locals.member_type !== "admin")) {
+   // if the user is not logged in as admin, redirect to unauthorised
+   if (!(req.isAuthenticated() && res.locals.member_type === "admin")) {
     res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("You are not authorised to access this page"));
+      encodeURIComponent("Inaccessible Route") + "&title=" +
+      encodeURIComponent("Not Authorised") + "&route=" +
+      encodeURIComponent("/"));
+    return;
+  }
+  if (!req.query.id || !req.query.username) {
+    // if no id or username is provided, redirect to unauthorised
+    res.redirect("/auth/unauthorised?err_msg=" +
+      encodeURIComponent("No user id or username provided") + "&title=" +
+      encodeURIComponent("Incomplete Route") + "&route=" +
+      encodeURIComponent("/"));
     return;
   }
   console.log("id",req.query.id, "username",req.query.username)
@@ -245,6 +301,14 @@ router.get("/delete", async function (req, res, next){
     "delete from users where id = $1",
     [req.query.id]
   );
+  if (result.rowCount === 0) {
+    // if no user is found, redirect to unauthorised
+    res.redirect("/auth/unauthorised?err_msg=" +
+      encodeURIComponent("No user found with that id") + "&title=" +
+      encodeURIComponent("Not Found") + "&route=" +
+      encodeURIComponent("/"));
+    return;
+  }
   console.log("result",result)
   res.redirect("admin");
 })

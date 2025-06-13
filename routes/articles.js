@@ -309,13 +309,17 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Converted to Postgres - Display and article in details by pressing "Read More..""
+// Display an article in detail by pressing "Read More..""
 router.get("/:slug", async (req, res) => {
+  console.log("req.params.slug", req.params.slug);
   try {
     const result = await pg_pool.query(
       `SELECT * from articles where slug ='${req.params.slug}'`
     );
-    if (result.rows.length === 0) res.redirect("/");
+    if (result.rows.length === 0) {
+      res.redirect("/")
+      return;
+    }
     let article = result.rows[0];
     // update the views (no of times the page was accessed)
     const updatedViews = result.rows[0].views + 1;
