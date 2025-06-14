@@ -65,6 +65,7 @@ app.use("/articles", articlesRouter);
 app.use("/setup", setupRouter);
 
 // Home Page redirected - because its implemented as an article
+// Security: None needed as its a public home page
 app.get("/", async (req, res, next) => {
   console.log("req.user", req.user);
 
@@ -77,6 +78,7 @@ app.get("/", async (req, res, next) => {
 });
 
 // About page redirected - because its implemented as an article
+// Security: None needed as its a public about page
 app.get("/about", async (req, res) => {
   res.redirect("/articles/about");
 });

@@ -109,6 +109,11 @@ router.get("/unauthorised", function (req, res, next) {
 // If there has been previous login failures,
 // req.session.messages[] will have an array of failure messages
 // The session is replaced with a new session after a successful login
+/*****************************************
+ * Security Note: Even if routes cannot be accessed via menus or links
+ * they can still be accessed via direct URL entry.
+ * Therefore very route needs to be protected.
+ ****************************************/
 // Security: Block access if user is already logged in
 //           TODO: Block if too many log-in attempts have been made
 router.get("/login", function (req, res, next) {
@@ -160,7 +165,7 @@ router.get("/logout", function (req, res, next) {
 });
 
 // Presents the admin screen - so far this screen allows users to be managed
-// Later need to add functions to manage documents and comments
+// TODO: add admin functions to manage documents and comments
 router.get("/admin", async function (req, res, next) {
   if (!req.isAuthenticated() || res.locals.member_type !== "admin") {
     // if the user is not logged in or not an admin, redirect to unauthorised
@@ -190,7 +195,7 @@ router.get("/admin", async function (req, res, next) {
  * 1. Via the /auth/signup route for a new user registering
  * 2. Via the "Add New User" button for the admin user from the /auth/admin route
  * 3. Via the "edit" buttons in the user list display by /auth/route (admin only)
- * 4: Via a new route (TODO) to allow a user to edit their own profile
+ * 4: TODO: Via the "editProfile" route for users to edit their own profile/password
  */
 
 // 1. Via the /auth/signup route for a new user registering
@@ -315,10 +320,10 @@ router.get("/delete", async function (req, res, next){
 
 // TODO: The deleteConfirm PUT route
 
-// Cancel of the form can be done from either a new signup or an existing user edit situation
+// This cancels the edit or add user form
+//          and the login form
+// Security: No need to block this route as it redirects only
 router.get("/cancel", function (req,res,next){
-  // console.log("**************")
-  // console.log(req.rawHeaders)
   let index = req.rawHeaders.findIndex((element)=> element==="Referer")
   console.log('index',index)
   if (req.rawHeaders[index+1].includes("auth/edit") || req.rawHeaders[index+1].includes("auth/addUser")){
@@ -429,13 +434,21 @@ router.post("/edit", async (req, res, next)=>{
 })
 
 // The signup POST route saves the registration data
+// Securtity: Block this route if the user is logged in, but not an admin
 router.post("/signup", async function (req, res, next) {
-  //The form has mandatory fields username, email, password and confirm_password
-  // Check that username does not already exist and that the passwords are the same
-  //NOTE: The users table has these fields
+  // The form has mandatory fields username, email, password and confirm_password
+  // Check that both username and email do not already exist and that the passwords are the same
+  // NOTE: The users table has these fields
   //      id, first_name,last_name,email,member_type,verified, status,
   //      salt, password,created_at, updated_at
-
+  if (req.isAuthenticated() && res.locals.member_type !== "admin") {
+    // if the user is logged in, redirect to unauthorised
+    res.redirect("/auth/unauthorised?err_msg=" +
+      encodeURIComponent("You are already registered") + "&title=" +
+      encodeURIComponent("Not Authorised") + "&route=" +
+      encodeURIComponent("/"));
+    return;
+  }
   try {
     let goodNewUser = false;
     let err_msg = "";
@@ -478,11 +491,6 @@ router.post("/signup", async function (req, res, next) {
     return next(err);
   }
 
-  // res.locals.loggedIn = req.isAuthenticated();
-  // res.locals.username = req.isAuthenticated() ? req.user.username : "";
-  // res.locals.member_type = req.isAuthenticated() ? req.user.member_type : "";
-  // res.locals.id = req.isAuthenticated() ? req.user.id : "";
-
   // If we reach here we are good to add the new user
   // Note: For now we are forcing status "active" and verified "verified"
   var salt = crypto.randomBytes(16);
@@ -516,7 +524,7 @@ router.post("/signup", async function (req, res, next) {
         return next(err);
       }
       // if its a new user log him in automatically
-      if (!res.locals.loggedIn) {
+      if (!req.isAuthenticated()) {
         const user = {
           id: result.rows[0].id,
           username: req.body.username,

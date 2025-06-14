@@ -98,6 +98,7 @@ let blankArticle = {
 };
 
 // Home page redirected
+// Security: None needed as its a public home page
 router.get("/home", async (req, res) => {
   try {
     const result = await pg_pool.query(
@@ -118,7 +119,8 @@ router.get("/home", async (req, res) => {
   }
 });
 
-// Home page redirected
+// Aout page redirected
+// Security: None needed as its a public about page
 router.get("/about", async (req, res) => {
   try {
     const result = await pg_pool.query(
@@ -141,7 +143,16 @@ router.get("/about", async (req, res) => {
 });
 
 // Reach here with /articles/new
+// Security: Only logged in users who are either admin or members can create new articles
 router.get("/new", (req, res) => {
+  if (!(req.isAuthenticated() && (res.locals.member_type === "admin" || res.locals.member_type === "member"))) {
+    // If not authenticated or not an admin or member, redirect to unauthorised page}
+    res.redirect("/auth/unauthorised?err_msg=" +
+      encodeURIComponent("Inaccessible Route") + "&title=" +
+      encodeURIComponent("Not Authorised") + "&route=" +
+      encodeURIComponent("/"));
+    return;
+  }
   res.render("articles/new", {
     article: { ...blankArticle },
     res: res.locals,
@@ -150,7 +161,17 @@ router.get("/new", (req, res) => {
 
 // Reach here on "new form" submission. POST to /articles/ to save a new article
 // On form submission, req.body will contain the form contents
+// Security: Only logged in users who are either admin or members can create new articles
+//           TODO: Block members from editing articles they dis not create.
 router.post("/", async (req, res) => {
+  if (!(req.isAuthenticated() && (res.locals.member_type === "admin" || res.locals.member_type === "member"))) {
+    // If not authenticated or not an admin or member, redirect to unauthorised page
+    res.redirect("/auth/unauthorised?err_msg=" +
+      encodeURIComponent("Inaccessible Route") + "&title=" +
+      encodeURIComponent("Not Authorised") + "&route=" +
+      encodeURIComponent("/"));
+    return;
+  }
   console.log("req.body", req.body);
   let newArticle = { ...blankArticle };
   newArticle.title = req.body.title.trim();
@@ -203,7 +224,17 @@ router.post("/", async (req, res) => {
  *
  *
  */
+// Security: Only logged in users who are either admin or members can create new articles
+//           TODO: Block members from editing articles they did not create.
 router.put("/:id", async (req, res, next) => {
+  if (!(req.isAuthenticated() && (res.locals.member_type === "admin" || res.locals.member_type === "member"))) {
+    // If not authenticated or not an admin or member, redirect to unauthorised page
+    res.redirect("/auth/unauthorised?err_msg=" +
+      encodeURIComponent("Inaccessible Route") + "&title=" +
+      encodeURIComponent("Not Authorised") + "&route=" +
+      encodeURIComponent("/"));
+    return;
+  }
   try {
     const result = await pg_pool.query(
       `SELECT * from articles WHERE id ='${req.params.id}'`
@@ -239,8 +270,18 @@ router.put("/:id", async (req, res, next) => {
   }
 });
 
-// Converted to Postgres - Delete an article from the Home page list
+// Delete an article from the Home page list
+// Security: Only logged in users who are either admin or members can delete articles
+//           TODO: Block members from deleting articles they did not create.
 router.delete("/:id", async (req, res) => {
+  if (!(req.isAuthenticated() && (res.locals.member_type === "admin" || res.locals.member_type === "member"))) {
+    // If not authenticated or not an admin or member, redirect to unauthorised page
+    res.redirect("/auth/unauthorised?err_msg=" +
+      encodeURIComponent("Inaccessible Route") + "&title=" +
+      encodeURIComponent("Not Authorised") + "&route=" +
+      encodeURIComponent("/"));
+    return;
+  }
   try {
     let response = await pg_pool.query(
       `DELETE FROM articles WHERE id = '${req.params.id}'`
@@ -253,7 +294,7 @@ router.delete("/:id", async (req, res) => {
 });
 
 // Display articles route, applying various filters
-// No authorisation needed
+// Security: TODO: Review this page and add security where needed
 router.get("/", async (req, res) => {
   let filter = req.query.filter;
   let query = "";
@@ -310,6 +351,7 @@ router.get("/", async (req, res) => {
 });
 
 // Display an article in detail by pressing "Read More..""
+// Security: Prevent non admin users from accessing unpublished articles, that dont belong to them
 router.get("/:slug", async (req, res) => {
   console.log("req.params.slug", req.params.slug);
   try {
@@ -336,7 +378,8 @@ router.get("/:slug", async (req, res) => {
   }
 });
 
-// Converted to Postgres - Reach here with /articles/edit/slug
+// Reach here with /articles/edit/slug
+// Security: Prevent non admin users from editing articles that dont belong to them
 router.get("/edit/:slug", async (req, res) => {
   // const article = await Article.findOne({ slug: req.params.slug });
   try {

@@ -276,15 +276,15 @@
                 </div>
               </section>
               <% } %>
-              <section class="d-flex flex-row mb-1 justify-content-evenly">
-                <div class="w-20"></div>
+              <section class="d-flex flex-row mb-1 gap-2 justify-content-between">
+                <div style="width: 75px"></div>
                   <% if(type==="new") { %>
-                    <button class="btn btn-primary" type="submit" formaction = "/auth/signup" formmethod = "post">Sign up</button>
+                    <button class="btn btn-primary flex-fill" type="submit" formaction = "/auth/signup" formmethod = "post">Sign up</button>
                   <% } else { %>
-                    <button class="btn btn-primary" type="submit" formaction = "/auth/edit" formmethod = "post">Save Changes</button> 
+                    <button class="btn btn-primary flex-fill" type="submit" formaction = "/auth/edit" formmethod = "post">Save Changes</button> 
                   <% } %>
                 </button>
-                <button class="btn btn-outline-primary" type="submit" formnovalidate formaction = "/auth/cancel" formmethod = "get">
+                <button class="btn btn-outline-primary flex-fill" type="submit" formnovalidate formaction = "/auth/cancel" formmethod = "get">
                   Cancel
                 </button>
               </section>

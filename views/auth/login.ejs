@@ -98,9 +98,12 @@
                 </div>
               </section>
               <% } %>
-              <section class="row mb-2 pt-1">
+              <section class="d-flex flex-row gap-2 mb-1 justify-content-between">
                 <div style="width: 45px"></div>
-                <button class="col btn btn-primary" type="submit">login</button>
+                <button class="btn btn btn-primary flex-fill" type="submit">login</button>
+                <button class="btn btn-outline-primary flex-fill" type="submit" formnovalidate formaction = "/auth/cancel" formmethod = "get">
+                  Cancel
+                </button>
               </section>
               <section class="row">
                 <div style="width: 45px"></div>
