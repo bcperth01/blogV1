@@ -148,9 +148,15 @@
                     Role
                   </label>
                   <select class="col" name="member_type" id="member_type">
-                    <option value="public" selected ="selected">Public</option>
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
+                    <% if(type !== "new") { %>
+                      <option value="public" <%= form1.member_type==="public" ? 'selected' : '' %>    >Public</option>
+                      <option value="user" <%= form1.member_type==="user" ? 'selected' : '' %>>User</option>
+                      <option value="admin" <%= form1.member_type==="admin" ? 'selected' : '' %> >Admin</option>
+                    <% } else { %>
+                      <option value="public" selected >Public</option>
+                      <option value="user">User</option>
+                      <option value="admin">Admin</option>
+                    <% } %>
                   </select>
                 </section>
                 <!-- verified (verified|unverified|pending)-->
@@ -159,9 +165,15 @@
                     Verified
                   </label>
                   <select class="col" name="verified" id="verified">
-                    <option value="verified">Verified</option>
-                    <option value="unverified" selected ="selected">Unverified</option>
-                    <option value="pending">Pending</option>
+                    <% if(type !== "new") { %>
+                      <option value="unverified" <%= form1.verified ==="unverified" ? 'selected' : '' %> >Unverified</option>
+                      <option value="verified" <%= form1.verified==="verified" ? 'selected' : '' %> >Verified</option>
+                      <option value="pending" <%= form1.verified==="pending" ? 'selected' : '' %> >Pending</option>
+                    <% } else { %>
+                      <option value="unverified" selected>Unverified</option>
+                      <option value="verified">Verified</option>
+                      <option value="pending">Pending</option>
+                    <% } %>
                   </select>
                 </section>
                 <!-- Status (active|suspended|pending)-->
@@ -170,9 +182,15 @@
                     Status
                   </label>
                   <select class="col" name="status" id="status">
-                   <option value="active">Active</option>
-                    <option value="suspended">Suspended</option>
-                    <option value="pending" selected ="selected">Pending</option>
+                    <% if(type !== "new") { %>
+                      <option value="active" <%= form1.status ==="active" ? 'selected' : '' %> >Active</option>
+                      <option value="suspended <%= form1.status ==="suspended" ? 'selected' : '' %> ">Suspended</option>
+                      <option value="pending" <%= form1.status ==="pending" ? 'selected' : '' %> >Pending</option>
+                    <% } else { %>
+                      <option value="active">Active</option>
+                      <option value="suspended">Suspended</option>
+                      <option value="pending" selected ="selected">Pending</option>
+                    <% } %>
                   </select>
                 </section>
               <% } %>

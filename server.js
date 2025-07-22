@@ -56,7 +56,7 @@ app.use((req, res, next) => {
   res.locals.member_type = req.isAuthenticated() ? req.user.member_type : "";
   res.locals.id = req.isAuthenticated() ? req.user.id : "";
   // console.log("res.locals", res.locals);
-  next(); 
+  next();
 });
 
 // Routers
@@ -67,7 +67,7 @@ app.use("/setup", setupRouter);
 // Home Page redirected - because its implemented as an article
 // Security: None needed as its a public home page
 app.get("/", async (req, res, next) => {
-  console.log("req.user", req.user);
+  console.log("req.user in route /", req.user);
 
   // USE NEXT 2 LINES TO CREATE THE TABLES FOR A NEW INSTALLATION
   // await createTables();

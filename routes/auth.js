@@ -10,7 +10,15 @@ const router = express.Router();
 
 const badLoginMessage = "Incorrect username or password";
 
-// Functio display unauthorised access message
+//TDDO: move this to a utility module within auth
+function verifyPasswordStrength(password) {
+  if (password.length > 7) {
+    return true;
+  }
+  return false;
+}
+
+// Function to display unauthorised access message
 
 // Function for Passport to verify a username/password
 async function verifyUser(username, password, cb) {
@@ -19,7 +27,7 @@ async function verifyUser(username, password, cb) {
     result = await pg_pool.query("SELECT * FROM users WHERE username = $1", [
       username,
     ]);
-    console.log("result", result.rows[0]);
+    console.log("result in verify user", result.rows[0]);
   } catch (err) {
     if (err) {
       console.log("error", err);
@@ -40,6 +48,7 @@ async function verifyUser(username, password, cb) {
     32,
     "sha256",
     function (err, hashedPassword) {
+      console.log("hashed password", hashedPassword);
       if (err) {
         return cb(err);
       }
@@ -93,15 +102,17 @@ passport.use(new localStrategy(verifyUser));
 // - unauthorised access message
 // - advise if page does not exist
 // and to redirect the user to a different route
-router.get("/unauthorised", function (req, res, next) {  
+router.get("/unauthorised", function (req, res, next) {
   const title = req.query.title ? req.query.title : "Unauthorised Access";
-  const err_msg = req.query.err_msg ? req.query.err_msg : "You are not authorised to access this page";
+  const err_msg = req.query.err_msg
+    ? req.query.err_msg
+    : "You are not authorised to access this page";
   const route = req.query.route ? req.query.route : "/";
   res.render("auth/unauthorised", {
     err_msg,
     res: res.locals,
     title,
-    route // the route to redirect to when the user clicks the button
+    route, // the route to redirect to when the user clicks the button
   });
 });
 
@@ -110,19 +121,23 @@ router.get("/unauthorised", function (req, res, next) {
 // req.session.messages[] will have an array of failure messages
 // The session is replaced with a new session after a successful login
 /*****************************************
- * Security Note: Even if routes cannot be accessed via menus or links
- * they can still be accessed via direct URL entry.
- * Therefore very route needs to be protected.
+ * Security Note: Even if routes cannot be accessed via menus or links...
+ * ...they can still be accessed via direct URL entry.
+ * Therefore every route needs to be protected.
  ****************************************/
 // Security: Block access if user is already logged in
 //           TODO: Block if too many log-in attempts have been made
 router.get("/login", function (req, res, next) {
-  if (req.user){
+  if (req.user) {
     // if the user is already logged in, redirect to unauthorised
-    res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("You are already logged in") + "&title=" +
-      encodeURIComponent("Bad Route") + "&route=" +
-      encodeURIComponent("/"));
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("You are already logged in") +
+        "&title=" +
+        encodeURIComponent("Bad Route") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
     return;
   }
   // res.redirect("/auth/unauthorised");
@@ -150,10 +165,14 @@ router.post(
 router.get("/logout", function (req, res, next) {
   if (!req.isAuthenticated()) {
     // if the user is not logged in, redirect to unauthorised
-    res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("You are not logged in") + "&title=" +
-      encodeURIComponent("Bad Route") + "&route=" +
-      encodeURIComponent("/"));
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("You are not logged in") +
+        "&title=" +
+        encodeURIComponent("Bad Route") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
     return;
   }
   req.logout(function (err) {
@@ -169,15 +188,19 @@ router.get("/logout", function (req, res, next) {
 router.get("/admin", async function (req, res, next) {
   if (!req.isAuthenticated() || res.locals.member_type !== "admin") {
     // if the user is not logged in or not an admin, redirect to unauthorised
-    res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("You are not authorised for this page") + "&title=" +
-      encodeURIComponent("Not Authorised") + "&route=" +
-      encodeURIComponent("/"));
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("You are not authorised for this page") +
+        "&title=" +
+        encodeURIComponent("Not Authorised") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
     return;
   }
   try {
     const users = await getAllUsers(); // an array of objects
-    let none_msg = users.length === 0?"Users table is empty":""
+    let none_msg = users.length === 0 ? "Users table is empty" : "";
     // console.log("All users", users);
     res.render("auth/manageUsers", {
       users,
@@ -185,8 +208,8 @@ router.get("/admin", async function (req, res, next) {
       none_msg,
     });
   } catch (error) {
-    console.log("error displaying users",error);
-    res.send("error displaying users")
+    console.log("error displaying users", error);
+    res.send("error displaying users");
   }
 });
 
@@ -203,14 +226,20 @@ router.get("/admin", async function (req, res, next) {
 router.get("/signup", function (req, res, next) {
   if (req.isAuthenticated()) {
     // if the user is logged in then cant register again
-    res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("You are already registered") + "&title=" +
-      encodeURIComponent("Not Authorised") + "&route=" +
-      encodeURIComponent("/"));
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("You are already registered") +
+        "&title=" +
+        encodeURIComponent("Not Authorised") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
     return;
   }
-  let form1 = req.query.form ? JSON.parse(decodeURIComponent(req.query.form)) : {}
-  console.log("form1 = ",form1);
+  let form1 = req.query.form
+    ? JSON.parse(decodeURIComponent(req.query.form))
+    : {};
+  console.log("form1 = ", form1);
   res.render("auth/editUser", {
     err_msg: req.query.err_msg ? req.query.err_msg : "",
     form1: form1,
@@ -225,18 +254,27 @@ router.get("/signup", function (req, res, next) {
 //           - if the user is not logged in
 router.get("/addUser", function (req, res, next) {
   // if the user is not logged in or is an admin, redirect to unauthorised
-  if (!req.isAuthenticated() || (req.isAuthenticated() && res.locals.member_type !== "admin")) {
-    res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("Inaccessible Route") + "&title=" +
-      encodeURIComponent("Not Authorised") + "&route=" +
-      encodeURIComponent("/"));
+  if (
+    !req.isAuthenticated() ||
+    (req.isAuthenticated() && res.locals.member_type !== "admin")
+  ) {
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("Inaccessible Route") +
+        "&title=" +
+        encodeURIComponent("Not Authorised") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
     return;
   }
-  let form1 = req.query.form ? JSON.parse(decodeURIComponent(req.query.form)) : {}
-  console.log("form1 = ",form1);
+  let form1 = req.query.form
+    ? JSON.parse(decodeURIComponent(req.query.form))
+    : {};
+  console.log("form1 = ", form1);
   res.render("auth/editUser", {
     err_msg: req.query.err_msg ? req.query.err_msg : "",
-    form1:form1,
+    form1: form1,
     res: res.locals,
     type: "new", // tells the signup form that this is a new user
   });
@@ -245,33 +283,46 @@ router.get("/addUser", function (req, res, next) {
 // 3. Via the "edit" buttons in the user list display by /auth/route (to edit an existing user)
 // Security: Block this route:
 //           - if the user is not logged in as admin
-router.get("/edit", async function(req, res, next){
+// Note: See below for POST method to save changes to a user's profile
+router.get("/edit", async function (req, res, next) {
   // if the user is not logged in as admin, redirect to unauthorised
   if (!(req.isAuthenticated() && res.locals.member_type === "admin")) {
-    res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("Inaccessible Route") + "&title=" +
-      encodeURIComponent("Not Authorised") + "&route=" +
-      encodeURIComponent("/"));
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("Inaccessible Route") +
+        "&title=" +
+        encodeURIComponent("Not Authorised") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
     return;
   }
   if (!req.query.id) {
     // if no id is provided, redirect to unauthorised
-    res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("No user id provided") + "&title=" +
-      encodeURIComponent("Incomplete Route") + "&route=" +
-      encodeURIComponent("/"));
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("No user id provided") +
+        "&title=" +
+        encodeURIComponent("Incomplete Route") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
     return;
   }
-  let result = await pg_pool.query(
-    "select * from users where id = $1",
-    [req.query.id]
-  );
+  let result = await pg_pool.query("select * from users where id = $1", [
+    req.query.id,
+  ]);
+  console.log("edit user query result", result.rows[0]);
   if (result.rowCount === 0) {
     // if no user is found, redirect to unauthorised
-    res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("No user found with that id") + "&title=" +
-      encodeURIComponent("Not Found") + "&route=" +
-      encodeURIComponent("/"));
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("No user found with that id") +
+        "&title=" +
+        encodeURIComponent("Not Found") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
     return;
   }
   res.render("auth/editUser", {
@@ -280,141 +331,271 @@ router.get("/edit", async function(req, res, next){
     res: res.locals,
     type: "edit", // tells the signup form we're editing an existing user
   });
-
 }); // see POST method below for when an existing user is being edited
 
 // The delete GET route
-router.get("/delete", async function (req, res, next){
-   // if the user is not logged in as admin, redirect to unauthorised
-   if (!(req.isAuthenticated() && res.locals.member_type === "admin")) {
-    res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("Inaccessible Route") + "&title=" +
-      encodeURIComponent("Not Authorised") + "&route=" +
-      encodeURIComponent("/"));
+router.get("/delete", async function (req, res, next) {
+  // if the user is not logged in as admin, redirect to unauthorised
+  if (!(req.isAuthenticated() && res.locals.member_type === "admin")) {
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("Inaccessible Route") +
+        "&title=" +
+        encodeURIComponent("Not Authorised") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
     return;
   }
-  if (!req.query.id || !req.query.username) {
-    // if no id or username is provided, redirect to unauthorised
-    res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("No user id or username provided") + "&title=" +
-      encodeURIComponent("Incomplete Route") + "&route=" +
-      encodeURIComponent("/"));
+  if (!req.query?.id?.length > 12) {
+    // if no id is provided, redirect to unauthorised
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("No user id provided") +
+        "&title=" +
+        encodeURIComponent("Incomplete Route") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
     return;
   }
-  console.log("id",req.query.id, "username",req.query.username)
-  let result = await pg_pool.query(
-    "delete from users where id = $1",
-    [req.query.id]
-  );
+  console.log("id", req.query.id, "username", req.query.username);
+  let result = await pg_pool.query("delete from users where id = $1", [
+    req.query.id,
+  ]);
   if (result.rowCount === 0) {
     // if no user is found, redirect to unauthorised
-    res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("No user found with that id") + "&title=" +
-      encodeURIComponent("Not Found") + "&route=" +
-      encodeURIComponent("/"));
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("No user found with that id") +
+        "&title=" +
+        encodeURIComponent("Not Found") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
     return;
   }
-  console.log("result",result)
+  console.log("result", result);
   res.redirect("admin");
-})
+});
 
 // TODO: The deleteConfirm PUT route
 
 // This cancels the edit or add user form
 //          and the login form
 // Security: No need to block this route as it redirects only
-router.get("/cancel", function (req,res,next){
-  let index = req.rawHeaders.findIndex((element)=> element==="Referer")
-  console.log('index',index)
-  if (req.rawHeaders[index+1].includes("auth/edit") || req.rawHeaders[index+1].includes("auth/addUser")){
-      res.redirect("admin");
+router.get("/cancel", function (req, res, next) {
+  let index = req.rawHeaders.findIndex((element) => element === "Referer");
+  console.log("index", index);
+  if (
+    req.rawHeaders[index + 1].includes("auth/edit") ||
+    req.rawHeaders[index + 1].includes("auth/addUser")
+  ) {
+    res.redirect("admin");
   } else {
-      res.redirect("/");
+    res.redirect("/");
   }
-})
+});
 
 // POST edit saves changes to an existing user
 // IN PROGRESS
-router.post("/edit", async (req, res, next)=>{
-  let result = await pg_pool.query(
-    "select * from users where id = $1",
-    [req.body.id]
-  );
-  console.log("***existing user",result.rows[0]);
-  console.log("***new user req.body",req.body);
-  // next check which if any fields are different
-  // for now we are allowing theses fields to be changed
-  // first_name, last_name, email, member_type, status, verified, password
+// Security: Block this route if
+//           - the user is not logged on
+//           - the user is logged on AND
+//                 - NOT( the user is Admin OR The user is editing his own profile)
+router.post("/edit", async (req, res, next) => {
+  // if the user is not logged in then go to unauthorised (can happen via a URL attempt)
+  console.log("res.locals", res.locals);
+  console.log("req.query", req.query);
+  if (!req.isAuthenticated()) {
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("Inaccessible Route") +
+        "&title=" +
+        encodeURIComponent("Not Authorised") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
+    return;
+  }
+  if (!req.query?.id?.length > 12) {
+    // if no id or username is provided, redirect to unauthorised
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("No user id provided") +
+        "&title=" +
+        encodeURIComponent("Incomplete Route") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
+    return;
+  }
+
+  if (!(res.locals.member_type === "admin" || res.locals.id === req.query.id)) {
+    // Block if not user is not admin or if the user is not editing his own user profile
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("Inaccessible Route") +
+        "&title=" +
+        encodeURIComponent("Not Authorised") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
+    return;
+  }
+
+  // Admin can change (firstname, lastname, role, verified, status and password)
+  // User can change (firstname, lastname, and password)
+  // We don't want to change id, username or email as they are unique identifiers possibly used to identify article owners etc
+  // We will also only make changes to records that have been changed in the form
+
+  // Read the table record to see what is to be changed.
+  let result = await pg_pool.query("select * from users where id = $1", [
+    req.body.id,
+  ]);
+  console.log("***existing user", result.rows[0]);
+  console.log("***new user req.body", req.body);
+
+  // check the form fields and build a SQL string
   let changed = false;
-  let SQLstring = `update users set `  
-  let WHEREclause = `where id = '${req.body.id}'`
+  let SQLstring = `update users set `;
+  let WHEREclause = `where id = '${req.body.id}'`;
+  let values = [];
+
+  // Allow admins to change anyone's name, but a user to change his own name only
+  // Note: If we reach here, these criteria are already met, so no need for conditional
+  // Note: SQL parameters start at $1 not $0
   if (req.body.first_name !== result.rows[0].first_name) {
-    SQLstring += `first_name = '${req.body.first_name}',`
+    SQLstring += `first_name = $${values.length + 1},`;
+    values[values.length] = req.body.first_name;
     changed = true;
   }
   if (req.body.last_name !== result.rows[0].last_name) {
-    SQLstring += `last_name = '${req.body.last_name}',`
+    SQLstring += `last_name = $${values.length + 1},`;
+    values[values.length] = req.body.last_name;
     changed = true;
   }
-  if (req.body.username !== result.rows[0].username) {
-    SQLstring += `username = '${req.body.username}',`
-    changed = true;
+  // we dont want to change username or email (they may be used elsewhere as unique identifiers)
+  // if (req.body.username !== result.rows[0].username) {
+  //   SQLstring += `username = '${req.body.username}',`;
+  //   changed = true;
+  // }
+  // if (req.body.email !== result.rows[0].email) {
+  //   SQLstring += `email = '${req.body.email}',`;
+  //   changed = true;
+  // }
+
+  // Only allow admins to change the membership status
+  // WARNING: Could get lockout if an Admin changes his member_type to User or Public (consider preventing this)
+  if (res.locals.member_type === "admin") {
+    if (req.body.member_type !== result.rows[0].member_type) {
+      SQLstring += `member_type = $${values.length + 1},`;
+      values[values.length] = req.body.member_type;
+      changed = true;
+    }
+    if (req.body.status !== result.rows[0].status) {
+      SQLstring += `status = $${values.length + 1},`;
+      values[values.length] = req.body.status;
+      changed = true;
+    }
+    if (req.body.verified !== result.rows[0].verified) {
+      SQLstring += `verified = $${values.length + 1},`;
+      values[values.length] = req.body.verified;
+      changed = true;
+    }
   }
-  if (req.body.email !== result.rows[0].email) {
-    SQLstring += `email = '${req.body.email}',`
-    changed = true;
+
+  // Check if the password has changed
+  // Note: Updating the password requires an additional step of hashing
+  // Note:  If the user has, in the past, logged in from the current browser,
+  //          the browser will fill in the password field automatically (but showing *****),
+  //        If the user has not logged in the password in the form will be blank.
+  // Strategy:
+  //        a) if the password is blank - then its not changed so skip
+  //        b) if the password is not blank - but its hash is the same as the stored hash - then its not changed so skip
+  //        c) if the password has changed, but does not match the "confirm" - then flag the error and redraw the edit screen
+  //        d) if the password has changed, but does not meet the criteria - then flag the error and redraw the edit screen
+  //           Otherwise
+  //        e) Mark the password as changed and add the SQL to change it
+
+  if (req.body.password === "") {
+    // password field is empty - so do nothing
+    console.log("Password not changed");
+  } else {
+    // check if its the same as the old password by hashng it with the same key as was used for the original
+    let hashedPassword = crypto.pbkdf2Sync(
+      req.body.password,
+      result.rows[0].salt,
+      310000,
+      32,
+      "sha256"
+    );
+    console.log("Checking the password");
+    console.log(hashedPassword);
+    console.log(result.rows[0].hashed_password);
+    if (Buffer.compare(hashedPassword, result.rows[0].hashed_password) === 0) {
+      // do nothing - password has not changed
+      console.log("password has NOT changed");
+    } else {
+      console.log("password has changed");
+      // Does the confirmation password match?
+      if (req.body.password !== req.body.confirm_password) {
+        // redraw the screen with the error indicated
+        console.log("confirmed password does not match");
+      } else {
+        // Is the password the right length and composition?
+        if (!verifyPasswordStrength(req.body.password)) {
+          console.log("Confirmed password does not match");
+          //  redraw the screen with the error indicated
+        } else {
+          // new pasword is good
+          console.log("adding SQL to update the password");
+          // create a new salt and hashed password
+          const salt = crypto.randomBytes(16);
+          console.log("salt", salt);
+          hashedPassword = crypto.pbkdf2Sync(
+            req.body.password,
+            salt,
+            310000,
+            32,
+            "sha256"
+          );
+          console.log("hashedPasswordNew", hashedPassword);
+          // update the SQL string to include the salt and hashed password
+          SQLstring += `hashed_password = $${values.length + 1},`;
+          values[values.length] = hashedPassword;
+          SQLstring += `salt = $${values.length + 1},`;
+          values[values.length] = salt;
+          changed = true;
+        }
+      }
+    }
   }
-  if (req.body.member_type !== result.rows[0].member_type) {
-    SQLstring += `member_type = '${req.body.member_type}',`
-    changed = true;
-  }
-  if (req.body.status !== result.rows[0].status) {
-    SQLstring += `status = '${req.body.status}',`
-    changed = true;
-  }
-  if (req.body.verified !== result.rows[0].verified) {
-    SQLstring += `,verified = '${req.body.verified}',`
-    changed = true;
-  }
-  if (changed){
-    SQLstring += `updated_at = NOW() ` // always update the updated_at field
+
+  if (changed) {
+    SQLstring += `updated_at = NOW() `; // always update the updated_at field
     SQLstring += WHEREclause;
-    console.log("SQLstring",SQLstring);
+    console.log("SQLstring", SQLstring);
+    console.log("values", values);
     try {
-      let result = await pg_pool.query(SQLstring);
-      console.log("result",result);
-      // if the password has changed, we need to hash it and save it
-      if (req.body.password && req.body.password.length > 7) {
-        var salt = crypto.randomBytes(16);
-        crypto.pbkdf2(
-          req.body.password,
-          salt,
-          310000,
-          32,
-          "sha256",
-          async function (err, hashedPassword) {
-            if (err) {
-              return next(err);
-            }
-            // update the password and salt
-            let result = await pg_pool.query(
-              "update users set hashed_password = $1, salt = $2 where id = $3",
-              [hashedPassword, salt, req.body.id]
-            );
-            console.log("result",result);
-          }
-        );
-      }
-      // if the user is logged in, update the session data
-      if (res.locals.loggedIn && res.locals.id === req.body.id) {
-        req.user.first_name = req.body.first_name;
-        req.user.last_name = req.body.last_name;
-        req.user.username = req.body.username;
-        req.user.email = req.body.email;
-        req.user.member_type = req.body.member_type;
-        req.user.status = req.body.status;
-        req.user.verified = req.body.verified;
-      }
+      let result = await pg_pool.query(SQLstring, values);
+      console.log("result", result);
+      result = await pg_pool.query("select * from users where id = $1", [
+        req.body.id,
+      ]);
+      console.log("user after being saved", result.rows[0]);
+
+      //   // // if the user is logged in, update the session data
+      //   // // TODO: Maybe better to logout/login if loggen in user's data has changed
+      //   // if (res.locals.loggedIn && res.locals.id === req.body.id) {
+      //   //   req.user.first_name = req.body.first_name;
+      //   //   req.user.last_name = req.body.last_name;
+      //   //   req.user.username = req.body.username;
+      //   //   req.user.email = req.body.email;
+      //   //   req.user.member_type = req.body.member_type;
+      //   //   req.user.status = req.body.status;
+      //   //   req.user.verified = req.body.verified;
+      //   // }
       // if the user is an admin, redirect to the admin page
       if (res.locals.member_type === "admin") {
         res.redirect("/auth/admin");
@@ -430,9 +611,9 @@ router.post("/edit", async (req, res, next)=>{
   } // end if changed
   // if nothing has changed, redirect to the home page
   console.log("No changes made to user");
-  res.redirect("/")
-})
-
+  res.redirect("/");
+  return;
+});
 // The signup POST route saves the registration data
 // Securtity: Block this route if the user is logged in, but not an admin
 router.post("/signup", async function (req, res, next) {
@@ -443,10 +624,14 @@ router.post("/signup", async function (req, res, next) {
   //      salt, password,created_at, updated_at
   if (req.isAuthenticated() && res.locals.member_type !== "admin") {
     // if the user is logged in, redirect to unauthorised
-    res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("You are already registered") + "&title=" +
-      encodeURIComponent("Not Authorised") + "&route=" +
-      encodeURIComponent("/"));
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("You are already registered") +
+        "&title=" +
+        encodeURIComponent("Not Authorised") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
     return;
   }
   try {
@@ -510,15 +695,35 @@ router.post("/signup", async function (req, res, next) {
           // only the admin user can upgrade role and status
           result = await pg_pool.query(
             "INSERT INTO users (status, verified,member_type,first_name, last_name,  email,username, hashed_password, salt) VALUES ($1, $2, $3, $4, $5, $6, $7,$8,$9) RETURNING id",
-            [req.body.status, req.body.verified,req.body.member_type,req.body.first_name,req.body.last_name,req.body.email,req.body.username, hashedPassword, salt]
-          ) ;
+            [
+              req.body.status,
+              req.body.verified,
+              req.body.member_type,
+              req.body.first_name,
+              req.body.last_name,
+              req.body.email,
+              req.body.username,
+              hashedPassword,
+              salt,
+            ]
+          );
         } else {
           // a general user gets the lowest status and role when signing up
           result = await pg_pool.query(
             "INSERT INTO users (status, verified,member_type,first_name, last_name,  email,username, hashed_password, salt) VALUES ($1, $2, $3, $4, $5, $6, $7,$8,$9) RETURNING id",
-            ["active", "verified","public",req.body.first_name,req.body.last_name,req.body.email,req.body.username, hashedPassword, salt]
+            [
+              "active",
+              "verified",
+              "public",
+              req.body.first_name,
+              req.body.last_name,
+              req.body.email,
+              req.body.username,
+              hashedPassword,
+              salt,
+            ]
           );
-        } 
+        }
       } catch (err) {
         console.log("error saving new user", err);
         return next(err);
@@ -532,7 +737,7 @@ router.post("/signup", async function (req, res, next) {
         req.login(user, function (err) {
           if (err) {
             return next(err);
-          } 
+          }
           res.redirect("/");
         });
       } else {
