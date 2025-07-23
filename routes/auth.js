@@ -453,8 +453,8 @@ router.post("/edit", async (req, res, next) => {
   let result = await pg_pool.query("select * from users where id = $1", [
     req.body.id,
   ]);
-  console.log("***existing user", result.rows[0]);
-  console.log("***new user req.body", req.body);
+  console.log("***existing user", result.rows[0]); // as read from the user table
+  console.log("***new user req.body", req.body); // as per the entry form
 
   // check the form fields and build a SQL string
   let changed = false;
@@ -540,13 +540,35 @@ router.post("/edit", async (req, res, next) => {
       console.log("password has changed");
       // Does the confirmation password match?
       if (req.body.password !== req.body.confirm_password) {
-        // redraw the screen with the error indicated
-        console.log("confirmed password does not match");
+        console.log(
+          "Confirm password does not match",
+          req.body.password,
+          req.body.confirm_password
+        );
+        //  redraw the screen with the error indicated
+        res.redirect(
+          "/auth/edit/?err_msg=" +
+            encodeURIComponent("Confirm password does not match") +
+            "&form=" +
+            encodeURIComponent(JSON.stringify(req.body)) +
+            "&id=" +
+            encodeURIComponent(req.body.id)
+        );
+        return; // redirects need a return to stop later code in this route being executed
       } else {
         // Is the password the right length and composition?
         if (!verifyPasswordStrength(req.body.password)) {
-          console.log("Confirmed password does not match");
+          console.log("password must meet requirements");
           //  redraw the screen with the error indicated
+          res.redirect(
+            "/auth/edit/?err_msg=" +
+              encodeURIComponent("Password must be 7 chars at least") +
+              "&form=" +
+              encodeURIComponent(JSON.stringify(req.body)) +
+              "&id=" +
+              encodeURIComponent(req.body.id)
+          );
+          return; // redirects need a return to stop later code in this route being executed
         } else {
           // new pasword is good
           console.log("adding SQL to update the password");
