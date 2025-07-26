@@ -183,6 +183,57 @@ router.get("/logout", function (req, res, next) {
   });
 });
 
+// Presents the screen to allow a user to edit his profile (ie password, firstname etc)
+router.get("/profile", async function (req, res, next) {
+  console.log("res.locals", res.locals);
+  if (!req.isAuthenticated()) {
+    // if the user is not logged in then block access
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("You are not authorised for this page") +
+        "&title=" +
+        encodeURIComponent("Not Authorised") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
+    return;
+  }
+  if (!res.locals.id) {
+    // if no id is provided, redirect to unauthorised
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("No user id provided") +
+        "&title=" +
+        encodeURIComponent("Incomplete Route") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
+    return;
+  }
+  let result = await pg_pool.query("select * from users where id = $1", [
+    res.locals.id,
+  ]);
+  console.log("edit user query result", result.rows[0]);
+  if (result.rowCount === 0) {
+    // if no user is found, redirect to unauthorised
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("No user found with that id") +
+        "&title=" +
+        encodeURIComponent("Not Found") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
+    return;
+  }
+  res.render("auth/editUser", {
+    err_msg: req.query.err_msg ? req.query.err_msg : "",
+    form1: result.rows[0],
+    res: res.locals,
+    type: "profile", // tells the edit/signup form we're editing an existing user
+  });
+});
+
 // Presents the admin screen - so far this screen allows users to be managed
 // TODO: add admin functions to manage documents and comments
 router.get("/admin", async function (req, res, next) {
@@ -329,7 +380,7 @@ router.get("/edit", async function (req, res, next) {
     err_msg: req.query.err_msg ? req.query.err_msg : "",
     form1: result.rows[0],
     res: res.locals,
-    type: "edit", // tells the signup form we're editing an existing user
+    type: "edit", // tells the edit/signup form we're editing an existing user
   });
 }); // see POST method below for when an existing user is being edited
 

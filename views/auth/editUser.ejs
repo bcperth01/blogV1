@@ -35,11 +35,12 @@
           >
             <!-- every row will have 2 columns with the first column 30px and the second 320px -->
             <div class="row mb-3">
-              <div style="width: 80px;"></div>
               <% if(type === "new") { %>
                 <h2 class="col text-center">Register New User</h2>
-              <%} else { %>
+              <%} else if(type === "edit")  { %>
                 <h2 class="col text-center">Edit Existing User</h2>
+              <%} else {%>
+                <h2 class="col text-center">Edit User Profile
               <%} %>
             </div>
             <!-- This is the form (Note: "action" attribute is in the submit buttons below)-->
