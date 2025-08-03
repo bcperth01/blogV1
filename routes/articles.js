@@ -105,18 +105,37 @@ router.get("/home", async (req, res) => {
       "SELECT markdown from articles where slug='home-page'"
     );
     // if (result.rows.length === 0) res.redirect("/");
-    if (result.rows.length === 0) {res.render("about/homeEmpty",{article:"", res: res.locals});}
-    else {
+    if (result.rows.length === 0) {
+      res.render("about/homeEmpty", { article: "", res: res.locals });
+    } else {
       let article = result.rows[0];
-      article.sanitisedHtml = dompurify.sanitize(md.render(article.markdown.trim()));
+      article.sanitisedHtml = dompurify.sanitize(
+        md.render(article.markdown.trim())
+      );
       res.render("about/home", {
         article,
         res: res.locals,
       });
-    }   
+    }
   } catch (err) {
     console.log(err);
   }
+});
+
+// Route for full text search for matcheing articles
+router.post("/search", async (req, res) => {
+  console.log("im searching");
+  console.log("searchCriteria", req.body.searchCriteria);
+  let sql = `select id,title, slug from articles where to_tsvector(markdown || ' ' || author || ' ' || slug ) @@ to_tsquery('${req.body.searchCriteria}')`;
+  console.log(sql);
+  try {
+    const result = await pg_pool.query(sql);
+    // if (result.rows.length === 0) res.redirect("/");
+    console.log(result.rows);
+  } catch (err) {
+    console.log(err);
+  }
+  res.redirect("/articles");
 });
 
 // Aout page redirected
@@ -127,16 +146,18 @@ router.get("/about", async (req, res) => {
       "SELECT markdown from articles where slug='about-page'"
     );
     // if (result.rows.length === 0) res.redirect("/");
-    if (result.rows.length === 0) {res.render("about/aboutEmpty",{article:"", res: res.locals});}
-    else {
+    if (result.rows.length === 0) {
+      res.render("about/aboutEmpty", { article: "", res: res.locals });
+    } else {
       let article = result.rows[0];
       article.sanitisedHtml = dompurify.sanitize(
-      md.render(article.markdown.trim())
-    );
-    res.render("about/about", {
-      article,
-      res: res.locals,
-    });}    
+        md.render(article.markdown.trim())
+      );
+      res.render("about/about", {
+        article,
+        res: res.locals,
+      });
+    }
   } catch (err) {
     console.log(err);
   }
@@ -145,12 +166,22 @@ router.get("/about", async (req, res) => {
 // Reach here with /articles/new
 // Security: Only logged in users who are either admin or members can create new articles
 router.get("/new", (req, res) => {
-  if (!(req.isAuthenticated() && (res.locals.member_type === "admin" || res.locals.member_type === "member"))) {
+  if (
+    !(
+      req.isAuthenticated() &&
+      (res.locals.member_type === "admin" ||
+        res.locals.member_type === "member")
+    )
+  ) {
     // If not authenticated or not an admin or member, redirect to unauthorised page}
-    res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("Inaccessible Route") + "&title=" +
-      encodeURIComponent("Not Authorised") + "&route=" +
-      encodeURIComponent("/"));
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("Inaccessible Route") +
+        "&title=" +
+        encodeURIComponent("Not Authorised") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
     return;
   }
   res.render("articles/new", {
@@ -164,12 +195,22 @@ router.get("/new", (req, res) => {
 // Security: Only logged in users who are either admin or members can create new articles
 //           TODO: Block members from editing articles they dis not create.
 router.post("/", async (req, res) => {
-  if (!(req.isAuthenticated() && (res.locals.member_type === "admin" || res.locals.member_type === "member"))) {
+  if (
+    !(
+      req.isAuthenticated() &&
+      (res.locals.member_type === "admin" ||
+        res.locals.member_type === "member")
+    )
+  ) {
     // If not authenticated or not an admin or member, redirect to unauthorised page
-    res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("Inaccessible Route") + "&title=" +
-      encodeURIComponent("Not Authorised") + "&route=" +
-      encodeURIComponent("/"));
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("Inaccessible Route") +
+        "&title=" +
+        encodeURIComponent("Not Authorised") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
     return;
   }
   console.log("req.body", req.body);
@@ -227,12 +268,22 @@ router.post("/", async (req, res) => {
 // Security: Only logged in users who are either admin or members can create new articles
 //           TODO: Block members from editing articles they did not create.
 router.put("/:id", async (req, res, next) => {
-  if (!(req.isAuthenticated() && (res.locals.member_type === "admin" || res.locals.member_type === "member"))) {
+  if (
+    !(
+      req.isAuthenticated() &&
+      (res.locals.member_type === "admin" ||
+        res.locals.member_type === "member")
+    )
+  ) {
     // If not authenticated or not an admin or member, redirect to unauthorised page
-    res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("Inaccessible Route") + "&title=" +
-      encodeURIComponent("Not Authorised") + "&route=" +
-      encodeURIComponent("/"));
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("Inaccessible Route") +
+        "&title=" +
+        encodeURIComponent("Not Authorised") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
     return;
   }
   try {
@@ -274,12 +325,22 @@ router.put("/:id", async (req, res, next) => {
 // Security: Only logged in users who are either admin or members can delete articles
 //           TODO: Block members from deleting articles they did not create.
 router.delete("/:id", async (req, res) => {
-  if (!(req.isAuthenticated() && (res.locals.member_type === "admin" || res.locals.member_type === "member"))) {
+  if (
+    !(
+      req.isAuthenticated() &&
+      (res.locals.member_type === "admin" ||
+        res.locals.member_type === "member")
+    )
+  ) {
     // If not authenticated or not an admin or member, redirect to unauthorised page
-    res.redirect("/auth/unauthorised?err_msg=" +
-      encodeURIComponent("Inaccessible Route") + "&title=" +
-      encodeURIComponent("Not Authorised") + "&route=" +
-      encodeURIComponent("/"));
+    res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("Inaccessible Route") +
+        "&title=" +
+        encodeURIComponent("Not Authorised") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
     return;
   }
   try {
@@ -344,6 +405,7 @@ router.get("/", async (req, res) => {
       articles,
       res: res.locals,
       none_msg,
+      searchBox: true, // show the articles searchbox on this route only
     });
   } catch (err) {
     console.log(err);
@@ -359,7 +421,7 @@ router.get("/:slug", async (req, res) => {
       `SELECT * from articles where slug ='${req.params.slug}'`
     );
     if (result.rows.length === 0) {
-      res.redirect("/")
+      res.redirect("/");
       return;
     }
     let article = result.rows[0];

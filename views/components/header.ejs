@@ -40,21 +40,32 @@
         </li>
         <% } %> <% if (res.loggedIn && res.member_type !== "admin") { %>
         <li class="nav-item">
-          <a class="nav-link" aria-current="page" href="/auth/profile"
+          <a class="nav-link" aria-current="page" href="/auth/editProfile"
             >Edit Profile</a
           >
         </li>
         <% } %>
       </ul>
-      <form class="d-flex" role="search">
+      <!-- Only show this if we are on the articles route -->
+      <!-- searchBox is only defined in the /articles route -->
+      <% if (typeof searchBox!== 'undefined' ) { %>
+      <form
+        class="d-flex"
+        role="search"
+        action="/articles/search"
+        method="post"
+      >
         <input
           class="form-control me-2"
           type="search"
           placeholder="Full Text Search..."
           aria-label="Search"
+          name="searchCriteria"
         />
         <button class="btn btn-outline-success" type="submit">Search</button>
       </form>
+      <% } %>
+      <!-- end conditional on articles route  -->
       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
         <% if (res.loggedIn) { %>
         <li class="nav-item mt-2">[user: <%=res.username%>]</li>
