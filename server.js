@@ -83,6 +83,19 @@ app.get("/about", async (req, res) => {
   res.redirect("/articles/about");
 });
 
+// Error page
+app.get("/error/:msg", (req, res) => {
+  const msg = decodeURIComponent(req.params.msg);
+  console.log("in error route");
+  console.log("req.params", req.params);
+  res.render("error/error", {
+    article: "",
+    res: res.locals,
+    title: "Server Error",
+    err_msg: msg,
+  });
+});
+
 // start the server
 let port = process.env.PORT | 5001;
 app.listen(port, () => {

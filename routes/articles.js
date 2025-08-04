@@ -126,7 +126,7 @@ router.get("/home", async (req, res) => {
 router.post("/search", async (req, res) => {
   console.log("im searching");
   console.log("searchCriteria", req.body.searchCriteria);
-  let sql = `select id,title, slug from articles where to_tsvector(markdown || ' ' || author || ' ' || slug ) @@ to_tsquery('${req.body.searchCriteria}')`;
+  let sql = `select id,title, slug from articles where to_tsvector(markdown || ' ' || author || ' ' || slug || ' ' || title) @@ to_tsquery('${req.body.searchCriteria}')`;
   console.log(sql);
   try {
     const result = await pg_pool.query(sql);
@@ -134,8 +134,13 @@ router.post("/search", async (req, res) => {
     console.log(result.rows);
   } catch (err) {
     console.log(err);
+    res.redirect("/error");
+    return;
   }
-  res.redirect("/articles");
+  res.redirect(
+    "/error/A Search Error Has Occurred in route %2Farticles%2Fsearch"
+  );
+  return;
 });
 
 // Aout page redirected
