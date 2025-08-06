@@ -123,24 +123,32 @@ router.get("/home", async (req, res) => {
 });
 
 // Route for full text search for matcheing articles
+// Security: Everyone can get a list of published articles
+// Note: A full text searchable document is created by combining the fiels "markdown", "author", "slug" and "title"
+//       The query vector is constructed from the whatever the user type in the search field
+//       This supports logical operators ! (not), & (and), | (or), and <-> (followed by)
+//       to_tsquery() function will error if other than the above characters are entered
+//                                     OR if multiple words are entered without one of them
+//       Also exists
+//            plainto_tsquery() - inserts '&' between words if no legal separator exists - also removes illegal separators (like '***' say)
+//            phraseto_query() - inserts '<->' between words if no legal separator exists - also removes illegal separators (like '***' say)
+//            websearch_to_tsquery() which behaves like standard browser searches
+//
 router.post("/search", async (req, res) => {
   console.log("im searching");
   console.log("searchCriteria", req.body.searchCriteria);
-  let sql = `select id,title, slug from articles where to_tsvector(markdown || ' ' || author || ' ' || slug || ' ' || title) @@ to_tsquery('${req.body.searchCriteria}')`;
+  let sql = `select * from articles where to_tsvector(markdown || ' ' || author || ' ' || slug || ' ' || title) @@ to_tsquery('${req.body.searchCriteria}') and published = 'unpublished'`;
   console.log(sql);
   try {
     const result = await pg_pool.query(sql);
-    // if (result.rows.length === 0) res.redirect("/");
-    console.log(result.rows);
+    res.render("articles/list", { res: res.locals, articles: result.rows });
+    return;
   } catch (err) {
-    console.log(err);
-    res.redirect("/error");
+    res.redirect(
+      "/error/A Search Error Has Occurred in route %2Farticles%2Fsearch"
+    );
     return;
   }
-  res.redirect(
-    "/error/A Search Error Has Occurred in route %2Farticles%2Fsearch"
-  );
-  return;
 });
 
 // Aout page redirected
