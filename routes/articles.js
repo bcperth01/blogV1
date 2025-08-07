@@ -63,8 +63,11 @@ const md = markdownit({
           hljs.highlight(str, { language: lang }).value +
           "</code></pre>"
         );
-      } catch (__) {
-        console.log("an Error occurred");
+      } catch (err) {
+        res.redirect(
+          "/error/A Error Has Occurred in function %2Farticles%2Fhighlight()"
+        );
+        return;
       }
     }
     console.log("No Language set");
@@ -118,7 +121,10 @@ router.get("/home", async (req, res) => {
       });
     }
   } catch (err) {
-    console.log(err);
+    res.redirect(
+      "/error/A Search Error Has Occurred in route %2Farticles%2Fhome"
+    );
+    return;
   }
 });
 
@@ -141,11 +147,18 @@ router.post("/search", async (req, res) => {
   console.log(sql);
   try {
     const result = await pg_pool.query(sql);
-    res.render("articles/list", { res: res.locals, articles: result.rows });
+    res.render("articles/list", {
+      res: res.locals,
+      articles: result.rows,
+      none_msg:
+        result.rows.length === 0
+          ? `No Articles Matching "${req.body.searchCriteria}"`
+          : "",
+    });
     return;
   } catch (err) {
     res.redirect(
-      "/error/A Search Error Has Occurred in route %2Farticles%2Fsearch"
+      "/error/A Search Error Has Occurred in route %2Farticles%2Fsearch POST"
     );
     return;
   }
@@ -172,7 +185,10 @@ router.get("/about", async (req, res) => {
       });
     }
   } catch (err) {
-    console.log(err);
+    res.redirect(
+      "/error/A Search Error Has Occurred in route %2Farticles%2Fabout"
+    );
+    return;
   }
 });
 
@@ -330,7 +346,10 @@ router.put("/:id", async (req, res, next) => {
 
     res.render("articles/edit", { article: editedArticle, res: res.locals });
   } catch (err) {
-    console.log(err);
+    res.redirect(
+      "/error/An Update Error Has Occurred in route %2Farticles%2F:id PUT"
+    );
+    return;
   }
 });
 
@@ -362,8 +381,10 @@ router.delete("/:id", async (req, res) => {
     );
     res.redirect("/");
   } catch (error) {
-    console.log("error deleting article by id", error.message);
-    res.redirect("/");
+    res.redirect(
+      "/error/A Delete Error Has Occurred in route %2Farticles%2Fdelete:id"
+    );
+    return;
   }
 });
 
@@ -421,7 +442,10 @@ router.get("/", async (req, res) => {
       searchBox: true, // show the articles searchbox on this route only
     });
   } catch (err) {
-    console.log(err);
+    res.redirect(
+      "/error/A Search Error Has Occurred in route %2Farticles%2F GET"
+    );
+    return;
   }
 });
 
@@ -449,14 +473,16 @@ router.get("/:slug", async (req, res) => {
     article.views = updatedViews;
     res.render("articles/show", { article, res: res.locals });
   } catch (err) {
-    console.log(err);
+    res.redirect(
+      "/error/A Search Error Has Occurred in route %2Farticles%2F:slug GET"
+    );
+    return;
   }
 });
 
 // Reach here with /articles/edit/slug
 // Security: Prevent non admin users from editing articles that dont belong to them
 router.get("/edit/:slug", async (req, res) => {
-  // const article = await Article.findOne({ slug: req.params.slug });
   try {
     const result = await pg_pool.query(
       `SELECT * from articles where slug ='${req.params.slug}'`
@@ -468,7 +494,10 @@ router.get("/edit/:slug", async (req, res) => {
     );
     res.render("articles/edit", { article, res: res.locals });
   } catch (err) {
-    console.log(err);
+    res.redirect(
+      "/error/A Search Error Has Occurred in route %2Farticles%2Fedit%2F:slug"
+    );
+    return;
   }
 });
 

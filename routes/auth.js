@@ -208,8 +208,8 @@ router.get("/admin", async function (req, res, next) {
       none_msg,
     });
   } catch (error) {
-    console.log("error displaying users", error);
-    res.send("error displaying users");
+    res.redirect("/error/A Search Error Has Occurred in route %2Fauth%2Fadmin");
+    return;
   }
 });
 
@@ -503,9 +503,18 @@ router.post("/edit", async (req, res, next) => {
   // We will also only make changes to records that have been changed in the form
 
   // Read the table record to see what is to be changed.
-  let result = await pg_pool.query("select * from users where id = $1", [
-    req.body.id,
-  ]);
+  let result = {};
+  try {
+    result = await pg_pool.query("select * from users where id = $1", [
+      req.body.id,
+    ]);
+  } catch (err) {
+    res.redirect(
+      "/error/A Search Error Has Occurred in route %2Fauth%2Fedit POST"
+    );
+    return;
+  }
+
   console.log("***existing user", result.rows[0]); // as read from the user table
   console.log("***new user req.body", req.body); // as per the entry form
 
@@ -680,8 +689,10 @@ router.post("/edit", async (req, res, next) => {
       res.redirect("/");
       return;
     } catch (err) {
-      console.log("error updating user", err);
-      return next(err);
+      res.redirect(
+        "/error/A update Error Has Occurred in route %2Fauth%2Fedit POST"
+      );
+      return;
     }
   } // end if changed
   // if nothing has changed, redirect to the home page
@@ -747,8 +758,10 @@ router.post("/signup", async function (req, res, next) {
       return; // redirects need a return to stop later code in this route being executed
     }
   } catch (err) {
-    console.log("error reading user", err);
-    return next(err);
+    res.redirect(
+      "/error/A Search Error Has Occurred in route %2Fauth%2Fsignup POST"
+    );
+    return;
   }
 
   // If we reach here we are good to add the new user
@@ -800,8 +813,10 @@ router.post("/signup", async function (req, res, next) {
           );
         }
       } catch (err) {
-        console.log("error saving new user", err);
-        return next(err);
+        res.redirect(
+          "/error/An Insert Error Has Occurred in route %2Fauth%2Fsignup POST"
+        );
+        return;
       }
       // if its a new user log him in automatically
       if (!req.isAuthenticated()) {

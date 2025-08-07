@@ -11,7 +11,10 @@ router.get("/testPG", async (req, res) => {
     res.send(`The current database is "${result.rows[0].current_database}"`);
     return;
   } catch (err) {
-    console.log(err);
+    res.redirect(
+      "/error/A Search Error Has Occurred in route %2Fsetup%2FtestPG GET"
+    );
+    return;
   }
   console.log(res.locals.loggedIn);
 });
@@ -22,7 +25,10 @@ router.get("/createTables", async (req, res) => {
     const result = await createTables();
     res.send(result);
   } catch (err) {
-    console.log(err);
+    res.redirect(
+      "/error/A Create Table Error Has Occurred in route %2Fauth%2FcreateTables"
+    );
+    return;
   }
 });
 
@@ -32,7 +38,10 @@ router.get("/dropTables", async (req, res) => {
     const result = await dropTables();
     res.send(result);
   } catch (err) {
-    console.log(err);
+    res.redirect(
+      "/error/A Drop Table Error Has Occurred in route %2Fauth%2FdropTables"
+    );
+    return;
   }
 });
 
