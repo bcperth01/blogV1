@@ -24,6 +24,7 @@ const sessionStore = new pgSessionStore({
 dotenv.config(); // Loads environment variables from .env file into process.env
 
 const app = express();
+app.use(express.static("public"));
 
 // Note: Render an ejs view with res.render("/pages/About") - this will look for "/views/pages/About"
 app.set("view engine", "ejs");

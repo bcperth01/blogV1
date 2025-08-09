@@ -115,6 +115,7 @@ router.get("/home", async (req, res) => {
       article.sanitisedHtml = dompurify.sanitize(
         md.render(article.markdown.trim())
       );
+      // article.created = article.created_at.toLocalString("en-UK");
       res.render("about/home", {
         article,
         res: res.locals,
@@ -147,9 +148,14 @@ router.post("/search", async (req, res) => {
   console.log(sql);
   try {
     const result = await pg_pool.query(sql);
+    // convert format of the created-at date
+    let articles = result.rows.map((article) => {
+      const formattedDate = dayjs(article.created_at).format("DD MMM, YYYY");
+      return { ...article, created_at: formattedDate };
+    });
     res.render("articles/list", {
       res: res.locals,
-      articles: result.rows,
+      articles,
       none_msg:
         result.rows.length === 0
           ? `No Articles Matching "${req.body.searchCriteria}"`
