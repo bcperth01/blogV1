@@ -1,15 +1,22 @@
-<div class="card" style="width: 300px">
+<div class="card" style="width: 360px">
   <div style="border-bottom: 1px solid lightgray">
-    <img
-      src="/images/scrnshot.png"
-      width="250"
-      height="200"
-      class="card-img-top"
-      alt="IM AN ALT"
-    />
+    <img src="<%=article.title_image %>"" width="360" height="150"
+    class="card-img-top" alt="IM AN ALT" />
   </div>
   <div class="card-body">
+    <h6 class="card-title mt-2"><%=article.title %></h6>
     <div class="card-text" style="font-size: 0.8rem">
+      <%=article.description %>
+    </div>
+    <a href="/articles/<%= article.slug%>" class="me-4">Read more.... </a>
+    <% if (readonly === false) { %> <% if(res.loggedIn && (res.id ===
+    article.user_id || res.member_type === "admin")) {%>
+    <a href="/articles/edit/<%= article.slug %>" class="me-2"> Edit </a>
+    <% } %> <% } %> <% if(res.loggedIn && (res.id === article.user_id ||
+    res.member_type === "admin")) {%>
+    <a href="/articles/delete/<%= article.slug %>"> Delete </a>
+    <% } %>
+    <div class="card-text mt-1" style="font-size: 0.7rem">
       <span class="fw-bold"
         ><svg
           xmlns="http://www.w3.org/2000/svg"
@@ -80,26 +87,5 @@
       </span>
       <span><%=article.likes%></span>
     </div>
-    <h6 class="card-title mt-2"><%=article.title %></h6>
-    <div class="card-text mb-2"><%=article.description %></div>
-    <a href="/articles/<%= article.slug%>" class="btn btn-secondary btn-sm"
-      >Read....
-    </a>
-    <% if (readonly === false) { %> <% if(res.loggedIn && (res.id ===
-    article.user_id || res.member_type === "admin")) {%>
-    <a href="/articles/edit/<%= article.slug %>" class="btn btn-primary btn-sm">
-      Edit
-    </a>
-    <% } %> <% if(res.loggedIn && (res.id === article.user_id || res.member_type
-    === "admin")) {%>
-    <form
-      action="/articles/<%= article.id %>?_method=DELETE"
-      method="POST"
-      class="d-inline"
-    >
-      <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-      <% } %>
-    </form>
-    <% } %>
   </div>
 </div>

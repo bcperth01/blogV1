@@ -22,7 +22,7 @@ export async function createTables() {
 export async function dropTables() {
   try {
     // if needed, put the appropriate SQL here to drop all tables
-    return "All tables dropped OK"
+    return "All tables dropped OK";
   } catch (err) {
     console.log(err);
     return "Tables NOT Dropped";
@@ -51,11 +51,12 @@ const createUsersTable =
 
 // articles belong to one user
 // NOTE: Published can be "unpublished | pending | published | suspended"
-// Noted: Fields article_type, author, view, likes, deleted were added 
+// Noted: Fields article_type, author, view, likes, deleted were added
 // manually to the table before the create query was modified
 const createArticlesTable =
   "CREATE TABLE IF NOT EXISTS articles (\
     id                  uuid PRIMARY KEY DEFAULT uuid_generate_v4(),\
+    title_image         varchar(80),\
     title               varchar(80),\
     slug                varchar(80),\
     tag_list            varchar(256),\

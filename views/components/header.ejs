@@ -35,8 +35,38 @@
           >
         </li>
         <% if (res.loggedIn && res.member_type === "admin") { %>
-        <li class="nav-item">
-          <a class="nav-link" aria-current="page" href="/auth/admin">Admin</a>
+        <li class="nav-item dropdown">
+          <a
+            class="nav-link dropdown-toggle"
+            href="#"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            Admin
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a class="dropdown-item" href="/auth/manageUsers">Manage Users</a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="/admin/images">Manage Images</a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="/admin/comments"
+                >Manage Comments</a
+              >
+            </li>
+            <li>
+              <a class="dropdown-item" href="/admin/documents"
+                >Manage Documents</a
+              >
+            </li>
+            <li>
+              <a class="dropdown-item" href="/admin/backups">Manage Backups</a>
+            </li>
+            <!-- <li><hr class="dropdown-divider" /></li> -->
+          </ul>
         </li>
         <% } %> <% if (res.loggedIn && res.member_type !== "admin") { %>
         <li class="nav-item">

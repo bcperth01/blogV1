@@ -381,10 +381,11 @@ router.delete("/:id", async (req, res) => {
     );
     return;
   }
+
   try {
-    let response = await pg_pool.query(
-      `DELETE FROM articles WHERE id = '${req.params.id}'`
-    );
+    // let response = await pg_pool.query(
+    //   `DELETE FROM articles WHERE id = '${req.params.id}'`
+    // );
     res.redirect("/");
   } catch (error) {
     res.redirect(

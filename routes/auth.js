@@ -18,8 +18,6 @@ function verifyPasswordStrength(password) {
   return false;
 }
 
-// Function to display unauthorised access message
-
 // Function for Passport to verify a username/password
 async function verifyUser(username, password, cb) {
   let result = {};
@@ -183,9 +181,8 @@ router.get("/logout", function (req, res, next) {
   });
 });
 
-// Presents the admin screen - so far this screen allows users to be managed
-// TODO: add admin functions to manage documents and comments
-router.get("/admin", async function (req, res, next) {
+// Presents the Manage Users screen
+router.get("/manageUsers", async function (req, res, next) {
   if (!req.isAuthenticated() || res.locals.member_type !== "admin") {
     // if the user is not logged in or not an admin, redirect to unauthorised
     res.redirect(
@@ -216,7 +213,7 @@ router.get("/admin", async function (req, res, next) {
 /**
  * Note: The "editUser" form can be activated from 3 places
  * 1. Via the /auth/signup route for a new user registering
- * 2. Via the "Add New User" button for the admin user from the /auth/admin route
+ * 2. Via the "Add New User" button for the admin user from the /auth/manageUsers route
  * 3. Via the "edit" buttons in the user list display by /auth/route (admin only)
  * 4: Via the "editProfile" route for users to edit their own profile/password
  */
@@ -248,7 +245,7 @@ router.get("/signup", function (req, res, next) {
   });
 }); // see POST method below for when a new user is being saved
 
-// 2. Via the "Add New User" button for the admin user from the /auth/admin route
+// 2. Via the "Add New User" button for the admin user from the /auth/manageUsers route
 // Security: Block this route:
 //           - if the user is logged in and not an admin
 //           - if the user is not logged in
@@ -444,7 +441,7 @@ router.get("/cancel", function (req, res, next) {
     req.rawHeaders[index + 1].includes("auth/edit") ||
     req.rawHeaders[index + 1].includes("auth/addUser")
   ) {
-    res.redirect("admin");
+    res.redirect("manageUsers");
   } else {
     res.redirect("/");
   }
@@ -682,7 +679,7 @@ router.post("/edit", async (req, res, next) => {
       //   // }
       // if the user is an admin, redirect to the admin page
       if (res.locals.member_type === "admin") {
-        res.redirect("/auth/admin");
+        res.redirect("/auth/manageUsers");
         return;
       }
       // if the user is not an admin, redirect to the home page
@@ -832,7 +829,7 @@ router.post("/signup", async function (req, res, next) {
         });
       } else {
         // if its an admin user, redirect to the admin page
-        res.redirect("/auth/admin");
+        res.redirect("/auth/manageUsers");
       }
     }
   );

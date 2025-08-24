@@ -1,6 +1,7 @@
 import express from "express";
 import articlesRouter from "./routes/articles.js";
 import authRouter from "./routes/auth.js";
+import adminRouter from "./routes/admin.js";
 import setupRouter from "./routes/setup.js"; // for routes only used to setup/test the system
 import methodOverride from "method-override";
 import dotenv from "dotenv";
@@ -26,7 +27,7 @@ const sessionStore = new pgSessionStore({
 dotenv.config(); // Loads environment variables from .env file into process.env
 
 const app = express();
-app.use(express.static("public"));
+app.use(express.static("public")); // allows access to local file in /public directly
 
 // Note: Render an ejs view with res.render("/pages/About") - this will look for "/views/pages/About"
 app.set("view engine", "ejs");
@@ -83,6 +84,7 @@ app.use((req, res, next) => {
 app.use("/auth", authRouter); // routes will look like /login
 app.use("/articles", articlesRouter);
 app.use("/setup", setupRouter);
+app.use("/admin", adminRouter);
 
 // Home Page redirected - because its implemented as an article
 // Security: None needed as its a public home page
@@ -126,7 +128,8 @@ app.get("/upload", async (req, res) => {
 // Security: Must be an admin or member
 //           Must not be accessible as a browser url route
 app.post("/upload", (req, res, next) => {
-  console.log(req.body);
+  console.log("req.body", req.body);
+  console.log("request", req);
   upload(req, res, function (err) {
     if (err) {
       return res.send("something went wrong");
