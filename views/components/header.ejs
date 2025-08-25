@@ -38,6 +38,7 @@
         <li class="nav-item dropdown">
           <a
             class="nav-link dropdown-toggle"
+            data-bs-auto-close="outside"
             href="#"
             role="button"
             data-bs-toggle="dropdown"
@@ -65,7 +66,20 @@
             <li>
               <a class="dropdown-item" href="/admin/backups">Manage Backups</a>
             </li>
-            <!-- <li><hr class="dropdown-divider" /></li> -->
+            <li><hr class="dropdown-divider" /></li>
+            <li>
+              <a
+                class="dropdown-item dropdown-toggle"
+                data-bs-toggle="dropdown"
+                href="#"
+                >Spare</a
+              >
+              <ul class="dropdown-menu">
+                <li><a href="#" class="dropdown-item">Item 1</a></li>
+                <li><a href="#" class="dropdown-item">Item 2</a></li>
+                <li><a href="#" class="dropdown-item">Item 3</a></li>
+              </ul>
+            </li>
           </ul>
         </li>
         <% } %> <% if (res.loggedIn && res.member_type !== "admin") { %>
