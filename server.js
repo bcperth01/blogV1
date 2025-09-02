@@ -3,6 +3,7 @@ import articlesRouter from "./routes/articles.js";
 import authRouter from "./routes/auth.js";
 import adminRouter from "./routes/admin.js";
 import setupRouter from "./routes/setup.js"; // for routes only used to setup/test the system
+import manageImagesRouter from "./routes/manageImages.js";
 import methodOverride from "method-override";
 import dotenv from "dotenv";
 import errorHandler from "./middleware/errorHandler.js";
@@ -85,6 +86,7 @@ app.use("/auth", authRouter); // routes will look like /login
 app.use("/articles", articlesRouter);
 app.use("/setup", setupRouter);
 app.use("/admin", adminRouter);
+app.use("/manageImages", manageImagesRouter);
 
 // Home Page redirected - because its implemented as an article
 // Security: None needed as its a public home page
@@ -115,26 +117,6 @@ app.get("/error/:msg", (req, res) => {
     res: res.locals,
     title: "Server Error",
     err_msg: msg,
-  });
-});
-
-// The upload files page
-// Security: Must be an admin or member
-app.get("/upload", async (req, res) => {
-  res.render("uploads/upload", { res: res.locals });
-  return;
-});
-// The upload files page
-// Security: Must be an admin or member
-//           Must not be accessible as a browser url route
-app.post("/upload", (req, res, next) => {
-  console.log("req.body", req.body);
-  console.log("request", req);
-  upload(req, res, function (err) {
-    if (err) {
-      return res.send("something went wrong");
-    }
-    res.send("upload Complete");
   });
 });
 

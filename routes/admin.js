@@ -43,25 +43,6 @@ router.get("/documents", function (req, res, next) {
   });
 });
 
-// This API end point displays the screen to manage images
-router.get("/images", function (req, res, next) {
-  if (!req.isAuthenticated() || res.locals.member_type !== "admin") {
-    // if the user is not logged in or not an admin, redirect to unauthorised
-    res.redirect(
-      "/auth/unauthorised?err_msg=" +
-        encodeURIComponent("You are not authorised for this page") +
-        "&title=" +
-        encodeURIComponent("Not Authorised") +
-        "&route=" +
-        encodeURIComponent("/")
-    );
-    return;
-  }
-  res.render("manage/images", {
-    res: res.locals,
-  });
-});
-
 // This API end point displays the screen to manage backups
 router.get("/backups", function (req, res, next) {
   if (!req.isAuthenticated() || res.locals.member_type !== "admin") {

@@ -7,9 +7,20 @@
     <!-- container for header -->
     <div class="container"><%- include('../components/header') %></div>
 
-      <!-- container for users Table -->
+      <!-- container for content -->
+       <!-- List files in S3 -->
+       <!-- Button to upload a file to S3 and create a public URL -->
       <div class="container">
        <h3>Management of Images Coming Soon....</h3>
+       <p>Before</p>
+       <p><%= res.username %></p>
+       <p><%= base64Image %></p>
+       <p>After</p>
+       <img src= "<%=base64Image%>" />
+       <div></div>
+       <img src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAAAAUA
+    AAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO
+        9TXL0Y4OHwAAAABJRU5ErkJggg==" alt="Red dot" />
       </div>
     </div>
   </body>
