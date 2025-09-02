@@ -5,6 +5,8 @@ import {
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
 
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
 // Get an image from S3 as a stream
 export async function getImageFromS3(bucketName, objectKey) {
   // open the S3 client with the correct credentials
@@ -20,11 +22,19 @@ export async function getImageFromS3(bucketName, objectKey) {
       Bucket: bucketName,
       Key: objectKey,
     });
-    const data = await s3Client.send(command);
-    return data.Body; // This is a Readable stream
+
+    // Try to get a signed url
+    const url = await getSignedUrl(s3Client, command, {
+      expiresIn: 30,
+    });
+    // console.log("url", url);
+
+    // const data = await s3Client.send(command);
+    // return data.Body; // This is a Readable stream
+    return url;
   } catch (error) {
-    console.error("Error retrieving image from S3:", error);
-    return { err: "Error retrieving image from S3" };
+    console.error("Error retrieving image URL from S3:", error);
+    return { err: "Error retrieving image URL from S3" };
   }
 }
 

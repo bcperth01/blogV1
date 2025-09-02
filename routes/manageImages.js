@@ -2,8 +2,10 @@ import {
   listS3Buckets,
   listS3Objects,
   getImageAsBase64,
+  getImageFromS3,
 } from "../utills/awsS3.js";
 import express from "express";
+import sharp from "sharp"; // image processing (making thumbnails in this case)
 const router = express.Router();
 
 /**
@@ -36,23 +38,27 @@ router.get("/images", async function (req, res, next) {
   } catch (err) {
     console.log("failed to read S3", err);
   }
+
   // console.log("S3 buckets", S3BucketsList);
   console.log("S3 Objects", S3ObjectsList);
 
   // read an image and convert it to base64
-  let base64Image = await getImageAsBase64(
-    "brendanbibtrack",
-    "EoghanOnTrack.png"
-  );
+  // let base64Image = await getImageAsBase64(
+  //   "brendanbibtrack",
+  //   "EoghanOnTrack.png"
+  // );
   // console.log("base64Image", base64Image);
-  base64Image = "data:image/jpeg;base64, " + base64Image;
-  // base64Image =
-  //   "data:image/png;base64, " +
-  //   "iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==";
+  // base64Image = "data:image/jpeg;base64, " + base64Image;
+
+  let url = await getImageFromS3("brendanbibtrack", "EoghanOnTrack.png");
+  const metaData = await sharp("./public/images/MeOnTrack.png").metadata();
+  console.log("metaData", metaData);
+
+  console.log("url", url);
 
   res.render("manage/images", {
     res: res.locals,
-    base64Image,
+    url,
   });
 });
 
