@@ -8,8 +8,6 @@ import methodOverride from "method-override";
 import dotenv from "dotenv";
 import errorHandler from "./middleware/errorHandler.js";
 import pg_pool from "./pgQueries/connectPool.js"; // connection to PostGres
-import multer from "multer";
-import fs from "fs";
 
 // For authentication using passport.js
 import passport from "passport";
@@ -32,23 +30,6 @@ app.use(express.static("public")); // allows access to local file in /public dir
 
 // Note: Render an ejs view with res.render("/pages/About") - this will look for "/views/pages/About"
 app.set("view engine", "ejs");
-
-let storage = multer.diskStorage({
-  destination: function (req, file, callback) {
-    const dir = "./uploads";
-    if (!fs.existsSync(dir)) {
-      console.log("directory not exists", dir);
-      fs.mkdirSync(dir);
-    }
-    callback(null, dir);
-  },
-  filename: function (req, file, callback) {
-    console.log("file", file);
-    callback(null, file.originalname);
-  },
-});
-
-let upload = multer({ storage: storage }).array("files", 12); // max 12 files
 
 // middleware
 app.use(express.urlencoded({ extended: false })); // extracts the body to make it available as res.body

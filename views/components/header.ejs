@@ -50,10 +50,26 @@
             <li>
               <a class="dropdown-item" href="/auth/manageUsers">Manage Users</a>
             </li>
-            <li>
+            <!-- <li>
               <a class="dropdown-item" href="/manageImages/images"
                 >Manage Images</a
               >
+            </li> -->
+            <li class="nav-item dropend">
+              <a
+                class="dropdown-item dropdown-toggle"
+                data-bs-toggle="dropdown"
+                href="#"
+                >Manage Images</a
+              >
+              <ul class="dropdown-menu">
+                <li>
+                  <a href="/manageImages/listImages2" class="dropdown-item"
+                    >List Images</a
+                  >
+                </li>
+                <li><a href="#" class="dropdown-item">Upload an Image</a></li>
+              </ul>
             </li>
             <li>
               <a class="dropdown-item" href="/admin/comments"
@@ -69,7 +85,7 @@
               <a class="dropdown-item" href="/admin/backups">Manage Backups</a>
             </li>
             <li><hr class="dropdown-divider" /></li>
-            <li>
+            <li class="nav-item dropend">
               <a
                 class="dropdown-item dropdown-toggle"
                 data-bs-toggle="dropdown"

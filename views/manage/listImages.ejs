@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%- include('../components/head') %>
+    <title>Manage Images</title>
+  </head>
+  <body>
+    <!-- container for header -->
+    <div class="container"><%- include('../components/header') %></div>
+
+    <div class="container mt-5">
+      <h1 class="mb-4 text-center">Images in S3 Bucket</h1>
+
+      <% if (images.length === 0) { %>
+      <p class="text-center text-muted">No images found in the bucket.</p>
+      <% } else { %>
+      <div class="row g-3">
+        <% images.forEach(image => { %>
+        <div class="col-md-3 col-sm-6">
+          <div class="card shadow-sm">
+            <img
+              src="<%= image.url %>"
+              class="card-img-top"
+              alt="<%= image.key %>"
+            />
+            <!-- <div class="card-body text-center">
+              <small class="text-muted"><%= image.key %></small>
+            </div> -->
+          </div>
+        </div>
+        <% }) %>
+      </div>
+      <% } %>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

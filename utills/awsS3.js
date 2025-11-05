@@ -3,11 +3,52 @@ import {
   ListObjectsV2Command,
   ListBucketsCommand,
   GetObjectCommand,
+  PutObjectCommand,
 } from "@aws-sdk/client-s3";
 
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-// Get an image from S3 as a stream
+// Save a memory buffer based image to S3
+export async function saveImageToS3(
+  bucketName,
+  originalname,
+  buffer,
+  mimetype
+) {
+  console.log("in saveImageToS3() ");
+  console.log(bucketName, originalname, mimetype);
+  // Create S3 upload parameters
+  const date = new Date();
+
+  // open the S3 client with the correct credentials
+  const s3Client = new S3Client({
+    region: process.env.AWS_REGION,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+  });
+
+  const params = {
+    Bucket: bucketName,
+    Key: date.toISOString().split("T")[0] + "-" + originalname, // Unique filename
+    Body: buffer,
+    ContentType: mimetype,
+    //ACL: "public-read", // Make file publicly accessible (optional)
+  };
+
+  // Upload to S3
+  const command = new PutObjectCommand(params);
+  try {
+    await s3Client.send(command);
+    return;
+  } catch (err) {
+    console.error("S3 Upload Error:", err);
+    throw new Error("S3 Upload Error");
+  }
+} // end upload to S3
+
+// Get an image from S3 as a signed url
 export async function getImageFromS3(bucketName, objectKey) {
   // open the S3 client with the correct credentials
   const s3Client = new S3Client({
