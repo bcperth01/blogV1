@@ -1,5 +1,10 @@
 /**
  * Managing images = Viewing, uploading and deleting images, as well as making verions with less resolution
+ * Images for the site are stored in an S3 bucket
+ * The bucket has 2 subdirectories (These were upload to S3 using a script)
+ *  /images for the images
+ *  /thumbnails for the thumbnails
+ *
  * --------------------------------------------
  * 1) Screen to list S3 images in the "brendanbibtrack" bucket, with thumbnail
  *    Functions to:
@@ -13,11 +18,6 @@
  *    - button to delete an image
  *        - add a confirmation screen
  *        - after the save refresh the list images view
- * 1a) Screen to list all images in /public/images, with thumbnail
- *    Functions to:
- *    - popup to view a full-size image
- *    - button to add a new image
- *    - button to delete an image
  *
  * Using images
  * ---------------
@@ -157,21 +157,29 @@ console.log("bucket name", BUCKET_NAME);
 // Route to list images
 router.get("/listImages2", async (req, res) => {
   try {
-    const command = new ListObjectsV2Command({ Bucket: BUCKET_NAME });
-    const response = await s3.send(command);
+    const command = new ListObjectsV2Command({
+      Bucket: BUCKET_NAME,
+      Prefix: "thumbnails/",
+    });
+    const data = await s3.send(command);
+
+    // 🔥 Filter only images beginning with Track (modified part)
+    const filtered = (data.Contents || []).filter((obj) => {
+      const filename = obj.Key.split("/").pop(); // extract filename
+      return filename && filename.startsWith("Track");
+    });
 
     const images = await Promise.all(
-      (response.Contents || [])
-        .filter((obj) => obj.Key.match(/\.(jpg|jpeg|png|gif|webp)$/i))
-        .map(async (obj) => {
-          const getObjectParams = { Bucket: BUCKET_NAME, Key: obj.Key };
-          const url = await getSignedUrl(
-            s3,
-            new GetObjectCommand(getObjectParams),
-            { expiresIn: 3600 }
-          );
-          return { key: obj.Key, url };
-        })
+      (filtered || []).map(async (obj) => {
+        const getObjectParams = { Bucket: BUCKET_NAME, Key: obj.Key };
+        const url = await getSignedUrl(
+          s3,
+          new GetObjectCommand(getObjectParams),
+          { expiresIn: 3600 }
+        );
+        console.log("Obj", obj);
+        return { key: obj.Key, url, size: obj.Size };
+      })
     );
 
     res.render("manage/listImages", { res: res.locals, images });

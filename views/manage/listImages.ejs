@@ -2,37 +2,55 @@
 <html lang="en">
   <head>
     <%- include('../components/head') %>
-    <title>Manage Images</title>
+    <title>List Images</title>
+    <style>
+      .card img {
+        object-fit: cover;
+        height: 150px;
+      }
+    </style>
   </head>
   <body>
     <!-- container for header -->
     <div class="container"><%- include('../components/header') %></div>
 
     <div class="container mt-5">
-      <h1 class="mb-4 text-center">Images in S3 Bucket</h1>
+      <h1 class="mb-4 text-center">Thumbnails (in S3)</h1>
 
       <% if (images.length === 0) { %>
-      <p class="text-center text-muted">No images found in the bucket.</p>
-      <% } else { %>
-      <div class="row g-3">
-        <% images.forEach(image => { %>
-        <div class="col-md-3 col-sm-6">
-          <div class="card shadow-sm">
-            <img
-              src="<%= image.url %>"
-              class="card-img-top"
-              alt="<%= image.key %>"
-            />
-            <!-- <div class="card-body text-center">
-              <small class="text-muted"><%= image.key %></small>
-            </div> -->
-          </div>
-        </div>
-        <% }) %>
+      <div class="alert alert-warning text-center">
+        No Images Found In the Bucket
       </div>
+      <% } else { %>
+
+      <!-- ✅ Bootstrap Table -->
+      <table
+        class="table table-bordered table-hover align-middle shadow-sm bg-white"
+      >
+        <thead class="table-light">
+          <tr>
+            <th>Image Name</th>
+            <th style="width: 120px">Thumbnail</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% images.forEach(image => { %>
+          <tr>
+            <td><%= image.key.replace(/^thumbnails\//, '') %></td>
+            <td class="text-center">
+              <img
+                src="<%= image.url %>"
+                alt="<%= image.key %>"
+                class="img-fluid rounded"
+                style="max-height: 80px"
+              />
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+
       <% } %>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   </body>
 </html>
