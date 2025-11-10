@@ -8,6 +8,34 @@ import {
 
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
+// Utility function to locate image references and get the signed urls
+export async function replaceMarkdownImages(markdown) {
+  const s3 = new S3Client({
+    region: process.env.AWS_REGION,
+    forcePathStyle: false,
+  }); // ✅ forcePathStyle Ensures bucket name stays in the signed URL });
+  const imageRegex = /!\[[^\]]*\]\(([^)]+)\)/g;
+
+  const replacements = [];
+
+  let match;
+  while ((match = imageRegex.exec(markdown)) !== null) {
+    const imageKey = match[1];
+
+    // generate signed URL
+    const command = new GetObjectCommand({
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: imageKey,
+    });
+
+    const signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+
+    replacements.push({ original: match[0], signedUrl });
+  }
+
+  return replacements;
+}
+
 // Save a memory buffer based image to S3
 export async function saveImageToS3(
   bucketName,

@@ -192,6 +192,42 @@ router.get("/listImages2", async (req, res) => {
  * End of ChatGPT5 code
  */
 
+// This is linked to listImages.ejs to retrieve and image when the user clicks on the thumbnail
+router.get("/getImage/:key", async (req, res, next) => {
+  const key = req.params.key;
+  console.log("key", key);
+
+  try {
+    const command = new GetObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+      Prefix: "images/",
+    });
+
+    // Generate a signed URL valid for 5 minutes
+    const signedUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
+
+    // for fun get the metadata for the image (this works - uncomment as needed)
+    const response = await fetch(signedUrl);
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const metadata = await sharp(buffer).metadata();
+    console.log("Metadata:", metadata);
+
+    res.json({ url: signedUrl });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to load image" });
+  }
+});
+
+router.post("/selectImage/:key", (req, res) => {
+  const key = decodeURIComponent(req.params.key);
+  console.log("Selected image:", key);
+
+  res.send(`You selected: ${key}`);
+});
+
 // Display screen to upload an image to the server
 // Security: Must be an admin or member
 router.get("/uploadToServer", async (req, res) => {

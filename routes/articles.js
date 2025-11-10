@@ -14,6 +14,7 @@ import createDomPurify from "dompurify";
 import { JSDOM } from "jsdom";
 import { addArticle } from "../pgQueries/queries.js";
 import pg_pool from "../pgQueries/connectPool.js";
+import { replaceMarkdownImages } from "../utills/awsS3.js";
 
 const dompurify = createDomPurify(new JSDOM().window);
 
@@ -458,6 +459,8 @@ router.get("/", async (req, res) => {
 
 // Display an article in detail by pressing "Read More..""
 // Security: Prevent non admin users from accessing unpublished articles, that dont belong to them
+// TODO: Update this so it replaces S3 image links with signed urls
+// Note: Currentlty retrieveing all articles matching the slug and displayig the first (this is not right)
 router.get("/:slug", async (req, res) => {
   console.log("req.params.slug", req.params.slug);
   try {
@@ -469,20 +472,38 @@ router.get("/:slug", async (req, res) => {
       return;
     }
     let article = result.rows[0];
+
     // update the views (no of times the page was accessed)
     const updatedViews = result.rows[0].views + 1;
     await pg_pool.query(
       `UPDATE articles set views ='${updatedViews}' where id = '${result.rows[0].id}'`
     );
+    article.views = updatedViews;
+
+    // Process the markdown to get a list of replacements with signedURLs
+    let replacements = await replaceMarkdownImages(article.markdown);
+    console.log("replacements", replacements);
+
+    // Create the HTML
     article.sanitisedHtml = dompurify.sanitize(
       md.render(article.markdown.trim())
     );
-    article.views = updatedViews;
+
+    // Now replace the image references with the signed URLS
+    replacements.forEach(({ original, signedUrl }) => {
+      article.sanitisedHtml = article.sanitisedHtml.replace(
+        original,
+        `<img src="${signedUrl}" style="max-width: 100%; border-radius: 8px; margin: 20px 0;">`
+      );
+    });
+
+    // render the article
     res.render("articles/show", { article, res: res.locals });
   } catch (err) {
     res.redirect(
       "/error/A Search Error Has Occurred in route %2Farticles%2F:slug GET"
     );
+    console.log("error", err);
     return;
   }
 });
