@@ -9,28 +9,51 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // Utility function to locate image references and get the signed urls
+// If an image is a thumbnail, then we can click it to display the full image
 export async function replaceMarkdownImages(markdown) {
   const s3 = new S3Client({
     region: process.env.AWS_REGION,
-    forcePathStyle: false,
-  }); // ✅ forcePathStyle Ensures bucket name stays in the signed URL });
+  });
   const imageRegex = /!\[[^\]]*\]\(([^)]+)\)/g;
 
   const replacements = [];
 
   let match;
   while ((match = imageRegex.exec(markdown)) !== null) {
-    const imageKey = match[1];
+    const embeddedKey = match[1];
+    // if the embedded image is a full image then the thumbnailSignedUrl and imageSignedUrl will be the same
+    // if the embedded image  is a thumbnail then the thumbnailSignedUrl and imageSignedUrl will be the same
 
-    // generate signed URL
-    const command = new GetObjectCommand({
+    // generate signed URL for the embedded image (mostly should be thumbnails)
+    let command = new GetObjectCommand({
       Bucket: process.env.S3_BUCKET_NAME,
-      Key: imageKey,
+      Key: embeddedKey,
+    });
+    const thumbnailSignedUrl = await getSignedUrl(s3, command, {
+      expiresIn: 3600,
     });
 
-    const signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+    let imageSignedUrl = "";
+    // Generate a signed url for the full image if embedded image is a thumbnail
+    if (embeddedKey.startsWith("thumbnails")) {
+      command = new GetObjectCommand({
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: embeddedKey.replace("thumbnails", "images"),
+      });
+      imageSignedUrl = await getSignedUrl(s3, command, {
+        expiresIn: 3600,
+      });
+      console.log("Changing imageSignedURL to", imageSignedUrl);
+    } else {
+      // If the embedded image is a full image then use that
+      imageSignedUrl = thumbnailSignedUrl;
+    }
 
-    replacements.push({ original: match[0], signedUrl });
+    replacements.push({
+      original: match[0],
+      thumbnailSignedUrl,
+      imageSignedUrl,
+    });
   }
 
   return replacements;

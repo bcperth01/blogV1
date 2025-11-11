@@ -484,16 +484,16 @@ router.get("/:slug", async (req, res) => {
     let replacements = await replaceMarkdownImages(article.markdown);
     console.log("replacements", replacements);
 
-    // Create the HTML
+    // Convert the MD document to HTML
     article.sanitisedHtml = dompurify.sanitize(
       md.render(article.markdown.trim())
     );
 
-    // Now replace the image references with the signed URLS
-    replacements.forEach(({ original, signedUrl }) => {
+    // Replace the image references with the signed URLS
+    replacements.forEach(({ original, thumbnailSignedUrl, imageSignedUrl }) => {
       article.sanitisedHtml = article.sanitisedHtml.replace(
         original,
-        `<img src="${signedUrl}" style="max-width: 100%; border-radius: 8px; margin: 20px 0;">`
+        `<img src="${thumbnailSignedUrl}" data-full="${imageSignedUrl}" style="max-width: 100%; border-radius: 8px; margin: 20px 0;">`
       );
     });
 

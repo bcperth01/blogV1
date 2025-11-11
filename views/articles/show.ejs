@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head><%- include('../components/head') %> 
+  <head>
+    <%- include('../components/head') %>
     <title>Show</title>
   </head>
   <body>
@@ -16,5 +17,131 @@
       <a href="/articles/edit/<%=article.slug%>" class="btn btn-info">Edit</a>
       <div><%-article.sanitisedHtml%></div>
     </div>
+
+    <!-- 🔍 Bootstrap Modal (for zooming images)
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-fullscreen-lg-down">
+        <div class="modal-content bg-dark border-0">
+          <button
+            type="button"
+            class="btn-close btn-close-white ms-auto me-2 mt-2"
+            data-bs-dismiss="modal"
+          ></button>
+          <div class="modal-body text-center p-0">
+            <img id="modalImage" class="img-fluid" style="max-height: 90vh" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll("img[data-full]").forEach((img) => {
+          console.log("image dataset", img.dataset);
+          img.style.cursor = "zoom-in";
+
+          img.addEventListener("click", () => {
+            document.getElementById("modalImage").src = img.dataset.full;
+            new bootstrap.Modal(document.getElementById("imageModal")).show();
+          });
+        });
+      });
+    </script> -->
+    <script src="https://unpkg.com/panzoom@9.4.3/dist/panzoom.min.js"></script>
+
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+      <!-- Extra large on desktop, fullscreen on small devices -->
+      <div class="modal-dialog modal-xl modal-fullscreen-sm-down">
+        <div class="modal-content bg-dark border-0">
+          <button
+            type="button"
+            class="btn-close btn-close-white ms-auto me-3 mt-3"
+            data-bs-dismiss="modal"
+          ></button>
+
+          <!-- Flex container to center image -->
+          <div
+            id="zoomContainer"
+            class="modal-body d-flex justify-content-center align-items-center p-0"
+            style="overflow: hidden; min-height: 60vh"
+          >
+            <img
+              id="modalImage"
+              class="img-fluid"
+              style="cursor: grab; max-width: 100%; max-height: 100%"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        let panzoomInstance;
+
+        const modalEl = document.getElementById("imageModal");
+        const modalImg = document.getElementById("modalImage");
+        const zoomContainer = document.getElementById("zoomContainer");
+
+        function disposePanzoom() {
+          if (panzoomInstance) {
+            try {
+              if (zoomContainer && panzoomInstance)
+                zoomContainer.removeEventListener(
+                  "wheel",
+                  panzoomInstance.zoomWithWheel
+                );
+              panzoomInstance.dispose?.();
+            } catch (err) {
+              console.warn("Error disposing panzoom instance:", err);
+            }
+            panzoomInstance = null;
+          }
+        }
+
+        async function openModalWithImage(url) {
+          disposePanzoom();
+
+          modalImg.src = url.replace(/&amp;/g, "&");
+          const bsModal = new bootstrap.Modal(modalEl);
+          bsModal.show();
+
+          modalImg.onload = () => {
+            disposePanzoom();
+
+            // ✅ Use lowercase 'panzoom' global
+            panzoomInstance = panzoom(modalImg, {
+              maxScale: 5,
+              minScale: 1,
+            });
+
+            // wheel zoom
+            if (zoomContainer) {
+              zoomContainer.addEventListener(
+                "wheel",
+                panzoomInstance.zoomWithWheel,
+                { passive: false }
+              );
+            }
+
+            modalImg.style.cursor = "grab";
+          };
+        }
+
+        document.querySelectorAll("img[data-full]").forEach((img) => {
+          img.style.cursor = "zoom-in";
+
+          img.addEventListener("click", () => {
+            const fullUrl = img.dataset.full.replace(/&amp;/g, "&");
+            openModalWithImage(fullUrl);
+          });
+        });
+
+        modalEl.addEventListener("hidden.bs.modal", () => {
+          disposePanzoom();
+          modalImg.src = "";
+        });
+      });
+    </script>
   </body>
 </html>
