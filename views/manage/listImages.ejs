@@ -11,6 +11,25 @@
     </style>
   </head>
   <body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <style>
+      #loading-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999; /* above everything */
+      }
+    </style>
+
     <!-- container for header -->
     <div class="container"><%- include('../components/header') %></div>
 
@@ -30,21 +49,81 @@
           <tr>
             <th style="width: 120px">Thumbnail</th>
             <th>Image Name</th>
+            <th>Actions</th>
+            <th>Copy</th>
           </tr>
         </thead>
         <tbody>
-          <% images.forEach(image => { %>
-          <tr>
-            <td class="text-center">
+          <% images.forEach(image => { const safeKey =
+          image.key.replace(/[^a-zA-Z0-9_-]/g, '-'); %>
+
+          <tr id="img-<%= safeKey %>">
+            <td>
               <img
                 src="<%= image.url %>"
-                alt="<%= image.key %>"
-                class="img-fluid rounded clickable-thumb"
-                style="max-height: 80px; cursor: pointer"
+                width="120"
+                class="img-thumbnail clickable-thumb"
                 data-key="<%= image.key %>"
               />
             </td>
+
             <td><%= image.key.replace(/^thumbnails\//, '') %></td>
+
+            <td>
+              <!-- Rotate Right -->
+              <form
+                action="/manageImages/rotate-image"
+                method="POST"
+                style="display: inline"
+              >
+                <input type="hidden" name="key" value="<%= image.key %>" />
+                <input type="hidden" name="focusKey" value="<%= safeKey %>" />
+                <input type="hidden" name="direction" value="right" />
+                <button
+                  type="submit"
+                  class="btn btn-outline-primary btn-sm"
+                  title="Rotate Right"
+                >
+                  <i class="bi bi-arrow-clockwise"></i>
+                </button>
+              </form>
+
+              <!-- Rotate Left -->
+              <form
+                action="/manageImages/rotate-image"
+                method="POST"
+                style="display: inline"
+              >
+                <input type="hidden" name="key" value="<%= image.key %>" />
+                <input type="hidden" name="focusKey" value="<%= safeKey %>" />
+                <input type="hidden" name="direction" value="left" />
+                <button
+                  type="submit"
+                  class="btn btn-outline-primary btn-sm"
+                  title="Rotate Left"
+                >
+                  <i class="bi bi-arrow-counterclockwise"></i>
+                </button>
+              </form>
+
+              <!-- Delete -->
+              <form
+                action="/manageImages/delete-image"
+                method="POST"
+                style="display: inline"
+                onsubmit="return confirm('Delete this image?');"
+              >
+                <input type="hidden" name="key" value="<%= image.key %>" />
+                <input type="hidden" name="focusKey" value="<%= safeKey %>" />
+                <button
+                  type="submit"
+                  class="btn btn-outline-danger btn-sm"
+                  title="Delete"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </td>
             <td>
               <!-- ✅ Select Button -->
               <form
@@ -57,6 +136,7 @@
               </form>
             </td>
           </tr>
+
           <% }) %>
         </tbody>
       </table>
@@ -124,6 +204,52 @@
           // Show modal
           modal.show();
         });
+      });
+    </script>
+
+    // This code makes sure the list scrolls to the rotated image after a
+    rotation refresh
+    <script>
+      window.addEventListener("load", () => {
+        // <-- waits for images and layout
+        const params = new URLSearchParams(window.location.search);
+        const focus = params.get("focus");
+
+        if (!focus) return;
+
+        const row = document.getElementById(`img-${focus}`);
+        if (!row) {
+          console.warn("Row not found:", `img-${focus}`);
+          return;
+        }
+
+        console.log("Scrolling to:", row.id);
+
+        row.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+
+        row.style.transition = "background-color 1s";
+        row.style.backgroundColor = "#e7f1ff";
+        setTimeout(() => (row.style.backgroundColor = ""), 2000);
+
+        // ✅ Remove `focus=...` from the URL *after* scrolling
+        params.delete("focus");
+        const cleanUrl = `${window.location.pathname}?${params.toString()}`;
+        window.history.replaceState({}, "", cleanUrl);
+      });
+    </script>
+
+    // This code is for the loading indicator
+    <script>
+      window.addEventListener("load", () => {
+        const overlay = document.getElementById("loading-overlay");
+        if (overlay) {
+          overlay.style.opacity = "0";
+          overlay.style.transition = "opacity 0.4s ease";
+          setTimeout(() => overlay.remove(), 400);
+        }
       });
     </script>
   </body>

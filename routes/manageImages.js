@@ -29,7 +29,9 @@
 import {
   S3Client,
   ListObjectsV2Command,
+  DeleteObjectCommand,
   GetObjectCommand,
+  PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import {
@@ -93,56 +95,8 @@ const uploadToBuffer = multer({ storage: storageBuffer }).array("files", 12);
  * - images that are displayed in the blog entry cards - /public/images for now
  * - images that are embedded in blog texts (S3)
  */
-// This API end point displays the screen to manage images
-router.get("/listImages", async function (req, res, next) {
-  if (!req.isAuthenticated() || res.locals.member_type !== "admin") {
-    // if the user is not logged in or not an admin, redirect to unauthorised
-    res.redirect(
-      "/auth/unauthorised?err_msg=" +
-        encodeURIComponent("You are not authorised for this page") +
-        "&title=" +
-        encodeURIComponent("Not Authorised") +
-        "&route=" +
-        encodeURIComponent("/")
-    );
-    return;
-  }
-  // Get a list of S3 images to display
-  // let S3BucketsList = [];
-  let S3ObjectsList = [];
-  try {
-    // S3BucketsList = await listS3Buckets();
-    S3ObjectsList = await listS3Objects("brendanbibtrack");
-  } catch (err) {
-    console.log("failed to read S3", err);
-  }
 
-  // console.log("S3 buckets", S3BucketsList);
-  console.log("S3 Objects", S3ObjectsList);
-
-  let signedUrl = await getImageFromS3(
-    "brendanbibtrack",
-    "2025-09-08-512px-Bibbulmun_Track_map.svg.png"
-  );
-  // for fun get the metadata for the image (this works - uncomment as needed)
-  // const response = await fetch(signedUrl);
-  // const arrayBuffer = await response.arrayBuffer();
-  // const buffer = Buffer.from(arrayBuffer);
-  // const metadata = await sharp(buffer).metadata();
-  // console.log("Metadata:", metadata);
-
-  // display the image
-  res.render("manage/images", {
-    res: res.locals,
-    url: signedUrl,
-  });
-});
-
-/**
- * Endpoint to display all images in an S3 bucket (from chatPT5)
- */
-
-// S3 client
+// Create an S3 client for use by any endpoints that need it
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
@@ -150,11 +104,107 @@ const s3 = new S3Client({
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
 });
-
 const BUCKET_NAME = process.env.S3_BUCKET_NAME;
-console.log("bucket name", BUCKET_NAME);
+
+// Route to rotate an image - either right or left by 90deg
+// TODO: Add security
+router.post("/rotate-image", async (req, res) => {
+  const { key, direction } = req.body;
+
+  if (!key) return res.status(400).send("Missing image key");
+
+  // rotate the thumbnail
+  try {
+    await rotateImage(key, direction);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error rotating thumbnail image");
+  }
+
+  // rotate the full image
+  try {
+    // ✅ Replace 'thumbnails/' prefix with 'images/'
+    let keyNew = key.replace(/^thumbnails\//, "images/");
+    await rotateImage(keyNew, direction);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error rotating full image");
+  }
+
+  // Append ?focus=<key> to URL so frontend knows which image was rotated
+  const redirectUrl = new URL(
+    req.get("Referrer") || "/",
+    `${req.protocol}://${req.get("host")}`
+  );
+  redirectUrl.searchParams.set("focus", req.body.focusKey);
+  res.redirect(redirectUrl.toString());
+});
+
+// Local utility to Rotate the image and save to S3
+async function rotateImage(key, direction) {
+  // Fetch original image from S3
+  const data = await s3.send(
+    new GetObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+    })
+  );
+
+  const buffer = await streamToBuffer(data.Body);
+
+  const angle = direction === "left" ? -90 : 90;
+
+  // Rotate in memory
+  const rotatedBuffer = await sharp(buffer).rotate(angle).toBuffer();
+
+  // Upload rotated image back to S3 (overwrite)
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+      Body: rotatedBuffer,
+      ContentType: "image/jpeg",
+    })
+  );
+  return;
+}
+
+// Local utility to convert S3 stream to Buffer
+function streamToBuffer(stream) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    stream.on("data", (chunk) => chunks.push(chunk));
+    stream.on("end", () => resolve(Buffer.concat(chunks)));
+    stream.on("error", reject);
+  });
+}
+
+// Route to delete an image in both /thumbnails and /images
+// TODO. This needs to be updated to generate the right keys and do 2 deletes
+// TODO: Add security
+router.post("/delete-image", async (req, res) => {
+  const { key } = req.body;
+
+  if (!key) return res.status(400).send("Missing image key");
+
+  try {
+    await s3.send(
+      new DeleteObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key,
+      })
+    );
+
+    res.redirect(req.get("Referrer") || "/"); // reload the page
+  } catch (error) {
+    console.error("Error deleting image:", error);
+    res.status(500).send("Failed to delete image");
+  }
+});
 
 // Route to list images
+// TODO: Add security
+// TODO: Change name to listImages (remove the 2)
 router.get("/listImages2", async (req, res) => {
   try {
     const command = new ListObjectsV2Command({
@@ -177,7 +227,7 @@ router.get("/listImages2", async (req, res) => {
           new GetObjectCommand(getObjectParams),
           { expiresIn: 3600 }
         );
-        console.log("Obj", obj);
+        //console.log("Obj", obj);
         return { key: obj.Key, url, size: obj.Size };
       })
     );
@@ -193,6 +243,7 @@ router.get("/listImages2", async (req, res) => {
  */
 
 // This is linked to listImages.ejs to retrieve and image when the user clicks on the thumbnail
+// TODO: Add security
 router.get("/getImage/:key", async (req, res, next) => {
   const key = req.params.key;
   console.log("key", key);
@@ -208,11 +259,11 @@ router.get("/getImage/:key", async (req, res, next) => {
     const signedUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
 
     // for fun get the metadata for the image (this works - uncomment as needed)
-    const response = await fetch(signedUrl);
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const metadata = await sharp(buffer).metadata();
-    console.log("Metadata:", metadata);
+    // const response = await fetch(signedUrl);
+    // const arrayBuffer = await response.arrayBuffer();
+    // const buffer = Buffer.from(arrayBuffer);
+    // const metadata = await sharp(buffer).metadata();
+    // console.log("Metadata:", metadata);
 
     res.json({ url: signedUrl });
   } catch (err) {
@@ -221,6 +272,8 @@ router.get("/getImage/:key", async (req, res, next) => {
   }
 });
 
+// TODO: Add security
+// TODO: Intergrate this with the MD editor to allow embedding the selected image
 router.post("/selectImage/:key", (req, res) => {
   const key = decodeURIComponent(req.params.key);
   console.log("Selected image:", key);
@@ -228,12 +281,18 @@ router.post("/selectImage/:key", (req, res) => {
   res.send(`You selected: ${key}`);
 });
 
-// Display screen to upload an image to the server
+/*********************************************************************
+ * Everything below here needs to be reviewed and deleted if necessary
+ *********************************************************************/
+
+// Route to Display screen to upload an image to the server
 // Security: Must be an admin or member
+// TODO: Add security
 router.get("/uploadToServer", async (req, res) => {
   res.render("uploads/uploadServer", { res: res.locals });
   return;
 });
+
 // Route to upload an image to the server
 // TODO:
 // Security: Must be an admin or member
