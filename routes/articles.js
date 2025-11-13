@@ -229,7 +229,7 @@ router.get("/new", (req, res) => {
 // Reach here on "new form" submission. POST to /articles/ to save a new article
 // On form submission, req.body will contain the form contents
 // Security: Only logged in users who are either admin or members can create new articles
-//           TODO: Block members from editing articles they dis not create.
+//           TODO: Block members from editing articles they did not create.
 router.post("/", async (req, res) => {
   if (
     !(
@@ -431,11 +431,11 @@ router.get("/", async (req, res) => {
   try {
     // console.log(query);
     const result = await pg_pool.query(query);
-    // console.log(result.rows);
+    console.log(result.rows);
     result.rows.sort((a, b) => {
       // sort by latest first
       if (a.created_at > b.created_at) return -1;
-      if (a.created_at > b.created_at) return +1;
+      if (a.created_at < b.created_at) return +1;
       return 0;
     });
     // convert format of the created-at date

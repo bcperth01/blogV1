@@ -34,6 +34,7 @@ import {
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+// Note: These utils may now be redundant
 import {
   listS3Objects,
   getImageFromS3,
@@ -43,6 +44,10 @@ import express from "express";
 import sharp from "sharp"; // image processing (making thumbnails in this case)
 import multer from "multer";
 import fs from "fs";
+
+// This cache avoids reloading a long list of thumbnails from s3 on every reload
+import NodeCache from "node-cache";
+const cache = new NodeCache({ stdTTL: 300 }); // 300 seconds = 5 minutes
 
 const router = express.Router();
 
@@ -90,7 +95,7 @@ const storageBuffer = multer.memoryStorage();
 const uploadToBuffer = multer({ storage: storageBuffer }).array("files", 12);
 
 /**
- * This module contains the APIs to manage files that live in the public directory or in S3
+ * This module contains the API endpoints to manage files that live in the public directory or in S3
  * Initially 2 categories of images are envisioned
  * - images that are displayed in the blog entry cards - /public/images for now
  * - images that are embedded in blog texts (S3)
@@ -109,7 +114,7 @@ const BUCKET_NAME = process.env.S3_BUCKET_NAME;
 // Route to rotate an image - either right or left by 90deg
 // TODO: Add security
 router.post("/rotate-image", async (req, res) => {
-  const { key, direction } = req.body;
+  const { key, direction, focusKey } = req.body;
 
   if (!key) return res.status(400).send("Missing image key");
 
@@ -131,12 +136,24 @@ router.post("/rotate-image", async (req, res) => {
     res.status(500).send("Error rotating full image");
   }
 
+  // Update cache entry’s signed URL (invalidate old one)
+  // Note: The S3 images are alreay rotated and saved
+  const images = cache.get("s3_images");
+  if (images) {
+    const updated = await Promise.all(
+      images.map(async (img) =>
+        img.key === key ? { ...img, url: await generateSignedUrl(key) } : img
+      )
+    );
+    cache.set("s3_images", updated);
+  }
+
   // Append ?focus=<key> to URL so frontend knows which image was rotated
   const redirectUrl = new URL(
     req.get("Referrer") || "/",
     `${req.protocol}://${req.get("host")}`
   );
-  redirectUrl.searchParams.set("focus", req.body.focusKey);
+  redirectUrl.searchParams.set("focus", focusKey);
   res.redirect(redirectUrl.toString());
 });
 
@@ -205,7 +222,7 @@ router.post("/delete-image", async (req, res) => {
 // Route to list images
 // TODO: Add security
 // TODO: Change name to listImages (remove the 2)
-router.get("/listImages2", async (req, res) => {
+router.get("/listImagesOld", async (req, res) => {
   try {
     const command = new ListObjectsV2Command({
       Bucket: BUCKET_NAME,
@@ -239,10 +256,94 @@ router.get("/listImages2", async (req, res) => {
   }
 });
 /**
- * End of ChatGPT5 code
+ * End get "/listimagesOld"
  */
+// Route to list images - using the cache if its loaded and not expired
+// 🧩 Helpers
+async function generateSignedUrl(Key) {
+  const command = new GetObjectCommand({
+    Bucket: process.env.S3_BUCKET_NAME,
+    Key,
+  });
+  return await getSignedUrl(s3, command, { expiresIn: 3600 });
+}
+// 🧩 First a fun to Fetch images from S3 (with cache)
+async function getImagesOld(forceRefresh = false) {
+  let images = cache.get("s3_images");
+  if (images) {
+    console.log("🟢 Cache hit");
+    return images;
+  }
 
-// This is linked to listImages.ejs to retrieve and image when the user clicks on the thumbnail
+  console.log("🟡 Cache miss — fetching from S3");
+
+  const data = await s3.send(
+    new ListObjectsV2Command({
+      Bucket: process.env.S3_BUCKET_NAME,
+      Prefix: "thumbnails/",
+    })
+  );
+
+  images = await Promise.all(
+    (data.Contents || []).map(async (obj) => ({
+      key: obj.Key,
+      title: obj.Key.split("/").pop(),
+      url: await generateSignedUrl(obj.Key),
+    }))
+  );
+
+  cache.set("s3_images", images);
+  return images;
+}
+
+async function getImages(forceRefresh = false) {
+  if (!forceRefresh) {
+    const cached = cache.get("s3_images");
+    if (cached) {
+      console.log("🟢 Cache hit");
+      return cached;
+    }
+  }
+
+  console.log("🟡 Cache miss — fetching from S3");
+  const data = await s3.send(
+    new ListObjectsV2Command({
+      Bucket: process.env.S3_BUCKET_NAME,
+      Prefix: "thumbnails/",
+    })
+  );
+
+  const images = await Promise.all(
+    (data.Contents || []).map(async (obj) => ({
+      key: obj.Key,
+      title: obj.Key.split("/").pop(),
+      url: await generateSignedUrl(obj.Key),
+    }))
+  );
+
+  cache.set("s3_images", images);
+  return images;
+}
+
+// here is the actual listImages2 route
+router.get("/listImages2", async (req, res) => {
+  const filter = (req.query.filter || "").toLowerCase().trim();
+  const images = await getImages(); // always returns full cached list
+  const filtered = filter
+    ? images.filter(
+        (img) =>
+          img.key.toLowerCase().includes(filter) ||
+          img.title.toLowerCase().includes(filter)
+      )
+    : images;
+  res.render("manage/listImages", {
+    res: res.locals,
+    images: filtered,
+    filter,
+  });
+});
+
+// This is linked to listImages.ejs to retrieve the full image (prefix /images/ when the user clicks on the thumbnail
 // TODO: Add security
 router.get("/getImage/:key", async (req, res, next) => {
   const key = req.params.key;
@@ -362,5 +463,18 @@ router.post("/uploadToS3", (req, res, next) => {
     res.send(saveToS3status.join("\n"));
   });
 });
+
+// 🕒 Automatically refresh S3 cache every 10 minutes
+const REFRESH_INTERVAL = 10 * 60 * 1000; // 10 minutes
+
+setInterval(async () => {
+  try {
+    console.log("♻️ Refreshing S3 cache...");
+    const images = await getImages(); // getImages() already updates the cache
+    console.log(`✅ Cache refreshed with ${images.length} images`);
+  } catch (err) {
+    console.error("❌ Error refreshing S3 cache:", err.message);
+  }
+}, REFRESH_INTERVAL);
 
 export default router;
