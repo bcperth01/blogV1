@@ -50,13 +50,13 @@
       <h4 class="mt-4"><%=none_msg%></h4>
       <% } else { %>
       <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4 mt-4">
-        <% articles.forEach(a => { %>
+        <% articles.forEach(article => { %>
         <div class="col-md-4">
           <div class="card h-100 shadow-sm">
             <!-- Image -->
             <img
-              src="<%= a.imageUrl %>"
-              alt="<%= a.title %>"
+              src="<%= article.imageUrl %>"
+              alt="<%= article.title %>"
               class="card-img-top"
               style="
                 height: 220px;
@@ -68,43 +68,50 @@
 
             <!-- Body -->
             <div class="card-body d-flex flex-column">
-              <h5 class="card-title"><%= a.title %></h5>
+              <h5 class="card-title"><%= article.title %></h5>
 
-              <p class="card-text text-muted mb-3"><%= a.description %></p>
+              <p class="card-text text-muted mb-3">
+                <%= article.description %>
+              </p>
 
               <!-- Push metadata to bottom -->
               <div class="mt-auto text-secondary small">
                 <!-- Author (own line) -->
-                <p class="mb-1"><strong>Author:</strong> <%= a.author %></p>
+                <p class="mb-1">
+                  <strong>Author:</strong> <%= article.author %>
+                </p>
 
                 <!-- Published (own line) -->
                 <p class="mb-1">
                   <strong>Published:</strong>
-                  <%= a.created_at.toLocaleDateString() %>
+                  <%= article.created_at.toLocaleDateString() %>
                 </p>
 
                 <!-- Views + Likes (you can separate if you prefer) -->
                 <p class="mb-0">
-                  <strong>Views:</strong> <%= a.views %> &nbsp;|&nbsp;
-                  <strong>Likes:</strong> <%= a.likes %>
+                  <strong>Views:</strong> <%= article.views %> &nbsp;|&nbsp;
+                  <strong>Likes:</strong> <%= article.likes %>
                 </p>
               </div>
             </div>
 
             <!-- Footer -->
             <div class="card-footer bg-white d-flex justify-content-between">
-              <a href="/articles/<%= a.id %>" class="text-decoration-none">
+              <a
+                href="/articles/<%= article.slug%>"
+                class="text-decoration-none"
+              >
                 Read more →
               </a>
 
               <div class="d-flex gap-3">
                 <a
-                  href="/articles/<%= a.id %>/edit"
+                  href="/articles/edit/<%= article.slug %>"
                   class="text-primary text-decoration-none"
                   >Edit</a
                 >
                 <a
-                  href="/articles/<%= a.id %>/delete"
+                  href="/articles/delete/<%= article.slug %>"
                   class="text-danger text-decoration-none"
                   onclick="return confirm('Delete this article?');"
                   >Delete</a

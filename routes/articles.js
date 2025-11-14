@@ -406,7 +406,7 @@ router.get("/", async (req, res) => {
   let query = "";
   let none_msg = "";
   let sqlStr =
-    "SELECT id, title, description,created_at, author, views, likes,title_image from articles where ";
+    "SELECT id, title, slug, description,created_at, author, views, likes,title_image from articles where ";
   switch (filter) {
     case "published":
       query = sqlStr + "published = 'published'";
