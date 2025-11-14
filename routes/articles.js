@@ -465,7 +465,12 @@ router.get("/", async (req, res) => {
       })
     );
 
-    res.render("articles/displayCards", { articles });
+    res.render("articles/index", {
+      articles,
+      res: res.locals,
+      none_msg,
+      searchBox: true, // show the articles searchbox on this route only
+    });
   } catch (err) {
     res.redirect(
       "/error/A Search Error Has Occurred in route %2Farticles%2F GET"
