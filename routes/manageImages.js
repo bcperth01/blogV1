@@ -27,6 +27,8 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
+import { generateSignedUrl } from "../utills/awsS3.js";
+
 import express from "express";
 import sharp from "sharp"; // image processing (making thumbnails in this case)
 import multer from "multer"; // for uploading files
@@ -176,13 +178,6 @@ router.post("/delete-image", async (req, res) => {
 // TODO: Add security
 // TODO: Change name to listImages (remove the 2)
 // 🧩 Helpers
-async function generateSignedUrl(Key) {
-  const command = new GetObjectCommand({
-    Bucket: process.env.S3_BUCKET_NAME,
-    Key,
-  });
-  return await getSignedUrl(s3, command, { expiresIn: 3600 });
-}
 
 async function getImages(forceRefresh = false) {
   if (!forceRefresh) {
@@ -281,7 +276,7 @@ router.post("/uploadImage", upload.single("imageFile"), async (req, res) => {
     }
 
     const originalName = req.body.imageName.trim();
-    const safeName = originalName.replace(/\s+/g, "-") + ".jpg";
+    const safeName = originalName + ".jpg";
 
     if (!req.file.mimetype.startsWith("image/")) {
       return res.status(400).json({ error: "Invalid file type." });
@@ -357,7 +352,7 @@ router.post("/uploadImage", upload.single("imageFile"), async (req, res) => {
     // ------------------------------
     // STEP 5B: UPDATE CACHE
     // ------------------------------
-    let list = cache.get("s3-images") || [];
+    let list = cache.get("s3_images") || [];
 
     // Your UI likely expects S3 object-style objects
     list.push({

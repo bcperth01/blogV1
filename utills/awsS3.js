@@ -8,12 +8,26 @@ import {
 
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
+const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
+
+// This is used anywhere S3 images are being displayed.
+export async function generateSignedUrl(Key) {
+  const command = new GetObjectCommand({
+    Bucket: process.env.S3_BUCKET_NAME,
+    Key,
+  });
+  return await getSignedUrl(s3, command, { expiresIn: 3600 });
+}
+
 // Utility function to locate image references and get the signed urls
 // If an image is a thumbnail, then we can click it to display the full image
 export async function replaceMarkdownImages(markdown) {
-  const s3 = new S3Client({
-    region: process.env.AWS_REGION,
-  });
   const imageRegex = /!\[[^\]]*\]\(([^)]+)\)/g;
 
   const replacements = [];
@@ -71,15 +85,6 @@ export async function saveImageToS3(
   // Create S3 upload parameters
   const date = new Date();
 
-  // open the S3 client with the correct credentials
-  const s3Client = new S3Client({
-    region: process.env.AWS_REGION,
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    },
-  });
-
   const params = {
     Bucket: bucketName,
     Key: date.toISOString().split("T")[0] + "-" + originalname, // Unique filename
@@ -91,7 +96,7 @@ export async function saveImageToS3(
   // Upload to S3
   const command = new PutObjectCommand(params);
   try {
-    await s3Client.send(command);
+    await s3.send(command);
     return;
   } catch (err) {
     console.error("S3 Upload Error:", err);
@@ -101,14 +106,6 @@ export async function saveImageToS3(
 
 // Get an image from S3 as a signed url
 export async function getImageFromS3(bucketName, objectKey) {
-  // open the S3 client with the correct credentials
-  const s3Client = new S3Client({
-    region: process.env.AWS_REGION,
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    },
-  });
   try {
     const command = new GetObjectCommand({
       Bucket: bucketName,
@@ -116,7 +113,7 @@ export async function getImageFromS3(bucketName, objectKey) {
     });
 
     // Try to get a signed url
-    const url = await getSignedUrl(s3Client, command, {
+    const url = await getSignedUrl(s3, command, {
       expiresIn: 30,
     });
     // console.log("url", url);
@@ -150,17 +147,9 @@ export async function getImageAsBase64(bucketName, objectKey) {
 
 // Function to read the list of buckets
 export const listS3Buckets = async () => {
-  // open the S3 client with the correct credentials
-  const s3Client = new S3Client({
-    region: process.env.AWS_REGION,
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    },
-  });
   try {
     const command = new ListBucketsCommand({});
-    const data = await s3Client.send(command);
+    const data = await s3.send(command);
     return data.Buckets; // an array like {Name:"bucketName", CreationDate:2025-08-26T02:28:14.000Z}
   } catch (error) {
     console.error("Error listing S3 buckets:", error);
@@ -170,14 +159,6 @@ export const listS3Buckets = async () => {
 
 // Function to read an S3 bucket Files
 export const listS3Objects = async (bucketName) => {
-  // open the S3 client with the correct credentials
-  const s3Client = new S3Client({
-    region: process.env.AWS_REGION,
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    },
-  });
   try {
     const command = new ListObjectsV2Command({
       Bucket: bucketName,
@@ -192,8 +173,9 @@ export const listS3Objects = async (bucketName) => {
     let continuationToken;
 
     while (isTruncated) {
-      const { Contents, IsTruncated, NextContinuationToken } =
-        await s3Client.send(command);
+      const { Contents, IsTruncated, NextContinuationToken } = await s3.send(
+        command
+      );
       if (Contents) {
         contents = contents.concat(Contents);
       }

@@ -16,6 +16,8 @@ import { addArticle } from "../pgQueries/queries.js";
 import pg_pool from "../pgQueries/connectPool.js";
 import { replaceMarkdownImages } from "../utills/awsS3.js";
 
+import { generateSignedUrl } from "../utills/awsS3.js";
+
 const dompurify = createDomPurify(new JSDOM().window);
 
 hljs.registerLanguage("javascript", javascript);
@@ -400,30 +402,34 @@ router.delete("/:id", async (req, res) => {
 // Security: TODO: Review this page and add security where needed
 router.get("/", async (req, res) => {
   let filter = req.query.filter;
+  console.log("filter:", filter); // its user_id by default
   let query = "";
   let none_msg = "";
+  let sqlStr =
+    "SELECT id, title, description,created_at, author, views, likes,title_image from articles where ";
   switch (filter) {
     case "published":
-      query = "SELECT * from articles where published = 'published'";
+      query = sqlStr + "published = 'published'";
       none_msg = "No published articles available";
       break;
     case "user_id":
-      query = "SELECT * from articles where user_id =" + `'${res.locals.id}'`;
+      query = sqlStr + " user_id =" + `'${res.locals.id}'`;
       none_msg = `No articles available for user "${res.locals.username}"`;
       break;
     case "pages":
-      query = "SELECT * from articles where article_type = 'site page'";
+      query = sqlStr + " article_type = 'site page'";
       none_msg = "No articles page available";
       break;
     case "pending":
       query =
-        "SELECT * from articles where user_id =" +
+        sqlStr +
+        "user_id =" +
         `'${res.locals.id}'` +
         "and published = 'pending'";
       none_msg = `No pending articles available for user "${res.locals.username}"`;
       break;
     default:
-      query = "SELECT * from articles where published = 'published'";
+      query = sqlStr + "published = 'published'";
       none_msg = "No published articles available";
       break;
   }
@@ -431,24 +437,35 @@ router.get("/", async (req, res) => {
   try {
     // console.log(query);
     const result = await pg_pool.query(query);
-    console.log(result.rows);
+    // console.log(result.rows);
     result.rows.sort((a, b) => {
       // sort by latest first
       if (a.created_at > b.created_at) return -1;
       if (a.created_at < b.created_at) return +1;
       return 0;
     });
-    // convert format of the created-at date
-    let articles = result.rows.map((article) => {
-      const formattedDate = dayjs(article.created_at).format("DD MMM, YYYY");
-      return { ...article, created_at: formattedDate };
-    });
-    res.render("articles/index", {
-      articles,
-      res: res.locals,
-      none_msg,
-      searchBox: true, // show the articles searchbox on this route only
-    });
+
+    // Create a signedUrl for each article (they are in the S3 /cards/ prefix)
+    const articles = await Promise.all(
+      result.rows.map(async (a) => {
+        const key = `cards/${a.title_image.trim()}`;
+
+        let imageUrl = "";
+        try {
+          imageUrl = await generateSignedUrl(key);
+        } catch (err) {
+          console.warn("Image missing:", key);
+          imageUrl = "/img/no-image.png"; // fallback optional
+        }
+
+        return {
+          ...a,
+          imageUrl,
+        };
+      })
+    );
+
+    res.render("articles/displayCards", { articles });
   } catch (err) {
     res.redirect(
       "/error/A Search Error Has Occurred in route %2Farticles%2F GET"
