@@ -50,13 +50,13 @@
       <h4 class="mt-4"><%=none_msg%></h4>
       <% } else { %>
       <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4 mt-4">
-        <% articles.forEach(article => { %>
+        <% articles.forEach(a => { %>
         <div class="col-md-4">
           <div class="card h-100 shadow-sm">
             <!-- Image -->
             <img
-              src="<%= article.imageUrl %>"
-              alt="<%= article.title %>"
+              src="<%= a.imageUrl %>"
+              alt="<%= a.title %>"
               class="card-img-top"
               style="
                 height: 220px;
@@ -68,50 +68,55 @@
 
             <!-- Body -->
             <div class="card-body d-flex flex-column">
-              <h5 class="card-title"><%= article.title %></h5>
+              <h5 class="card-title"><%= a.title %></h5>
 
-              <p class="card-text text-muted mb-3">
-                <%= article.description %>
+              <!-- 3-line truncated description -->
+              <p class="card-text text-muted mb-3 description-ellipsis">
+                <%= a.description %>
               </p>
 
-              <!-- Push metadata to bottom -->
+              <!-- Metadata at bottom -->
               <div class="mt-auto text-secondary small">
-                <!-- Author (own line) -->
+                <!-- Author -->
                 <p class="mb-1">
-                  <strong>Author:</strong> <%= article.author %>
+                  <i class="bi bi-person me-1"></i>
+                  <strong>Author:</strong> <%= a.author %>
                 </p>
 
-                <!-- Published (own line) -->
+                <!-- Published -->
                 <p class="mb-1">
+                  <i class="bi bi-calendar me-1"></i>
                   <strong>Published:</strong>
-                  <%= article.created_at.toLocaleDateString() %>
+                  <%= a.created_at.toLocaleDateString() %>
                 </p>
 
-                <!-- Views + Likes (you can separate if you prefer) -->
+                <!-- Views + Likes -->
                 <p class="mb-0">
-                  <strong>Views:</strong> <%= article.views %> &nbsp;|&nbsp;
-                  <strong>Likes:</strong> <%= article.likes %>
+                  <i class="bi bi-eye me-1"></i>
+                  <strong><%= a.views %></strong>
+
+                  &nbsp;&nbsp;
+
+                  <i class="bi bi-hand-thumbs-up me-1"></i>
+                  <strong><%= a.likes %></strong>
                 </p>
               </div>
             </div>
 
             <!-- Footer -->
             <div class="card-footer bg-white d-flex justify-content-between">
-              <a
-                href="/articles/<%= article.slug%>"
-                class="text-decoration-none"
-              >
+              <a href="/articles/<%= a.id %>" class="text-decoration-none">
                 Read more →
               </a>
 
               <div class="d-flex gap-3">
                 <a
-                  href="/articles/edit/<%= article.slug %>"
+                  href="/articles/<%= a.id %>/edit"
                   class="text-primary text-decoration-none"
                   >Edit</a
                 >
                 <a
-                  href="/articles/delete/<%= article.slug %>"
+                  href="/articles/<%= a.id %>/delete"
                   class="text-danger text-decoration-none"
                   onclick="return confirm('Delete this article?');"
                   >Delete</a
