@@ -105,18 +105,18 @@
 
             <!-- Footer -->
             <div class="card-footer bg-white d-flex justify-content-between">
-              <a href="/articles/<%= a.id %>" class="text-decoration-none">
+              <a href="/articles/<%= a.slug %>" class="text-decoration-none">
                 Read more →
               </a>
 
               <div class="d-flex gap-3">
                 <a
-                  href="/articles/<%= a.id %>/edit"
+                  href="/articles/edit/<%= a.slug %>"
                   class="text-primary text-decoration-none"
                   >Edit</a
                 >
                 <a
-                  href="/articles/<%= a.id %>/delete"
+                  href="/articles/delete/<%= a.slug %>"
                   class="text-danger text-decoration-none"
                   onclick="return confirm('Delete this article?');"
                   >Delete</a

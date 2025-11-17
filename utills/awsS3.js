@@ -22,41 +22,78 @@ export async function generateSignedUrl(Key) {
     Bucket: process.env.S3_BUCKET_NAME,
     Key,
   });
-  return await getSignedUrl(s3, command, { expiresIn: 3600 });
+  let signedUrl;
+  try {
+    signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+    return signedUrl;
+  } catch (err) {
+    console.error("Failed to sign URL for", Key, err);
+    return { err };
+  }
 }
 
-// Utility function to locate image references and get the signed urls
+// -------- Replace Markdown Images with signed S3 URLs --------
+// note: This version is for the preview screen and does not allow clicking to see the full image
+export async function replaceMarkdownImagesInPreview(markdown) {
+  // Regex to match markdown images: ![alt](url)
+  const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+
+  // Replace async: process each match individually
+  const matches = [...markdown.matchAll(imageRegex)];
+
+  for (const match of matches) {
+    const fullMatch = match[0]; // entire `![alt](...)`
+    const altText = match[1]; // inside [ ]
+    const imagePath = match[2]; // inside ( )
+
+    // Strip the prefix if it exists and replace with thumbnails/
+    let Key = "";
+    const imagePathParts = imagePath.split("/");
+    if (imagePathParts.length === 1) {
+      Key = `thumbnails/${imagePathParts[0]}`;
+    } else if (imagePathParts.length === 2) {
+      Key = `thumbnails/${imagePathParts[1]}`;
+    } else {
+      Key = imagePath; // probably S3 wont find it
+    }
+
+    let signedUrl = await generateSignedUrl(Key);
+    if (signedUrl.err) {
+      console.error("Failed to sign URL for", Key, err);
+      continue; // Skip this image but keep processing others}
+    }
+
+    // Build new markdown image
+    const newMarkdownImage = `![${altText}](${signedUrl})`;
+
+    // Replace in the markdown
+    markdown = markdown.replace(fullMatch, newMarkdownImage);
+  }
+
+  return markdown;
+}
+
+// Utility function to locate image references in a markdown file and get the signed urls
 // If an image is a thumbnail, then we can click it to display the full image
+// This means we have to return signedUrls for both the thumbnail and full image
 export async function replaceMarkdownImages(markdown) {
   const imageRegex = /!\[[^\]]*\]\(([^)]+)\)/g;
 
   const replacements = [];
 
   let match;
+  // Warning: regex.exec() produces an array of matches but the array also has properies
+  // (which is allowed but very unusual ... and breaks typescript according to the AI)
   while ((match = imageRegex.exec(markdown)) !== null) {
-    const embeddedKey = match[1];
-    // if the embedded image is a full image then the thumbnailSignedUrl and imageSignedUrl will be the same
-    // if the embedded image  is a thumbnail then the thumbnailSignedUrl and imageSignedUrl will be the same
-
-    // generate signed URL for the embedded image (mostly should be thumbnails)
-    let command = new GetObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME,
-      Key: embeddedKey,
-    });
-    const thumbnailSignedUrl = await getSignedUrl(s3, command, {
-      expiresIn: 3600,
-    });
+    const embeddedKey = match[1]; // which should contain the key and filename like "thumbnails/imageName.png"
+    const thumbnailSignedUrl = await generateSignedUrl(embeddedKey);
 
     let imageSignedUrl = "";
     // Generate a signed url for the full image if embedded image is a thumbnail
     if (embeddedKey.startsWith("thumbnails")) {
-      command = new GetObjectCommand({
-        Bucket: process.env.S3_BUCKET_NAME,
-        Key: embeddedKey.replace("thumbnails", "images"),
-      });
-      imageSignedUrl = await getSignedUrl(s3, command, {
-        expiresIn: 3600,
-      });
+      imageSignedUrl = await generateSignedUrl(
+        embeddedKey.replace("thumbnails", "images")
+      );
       console.log("Changing imageSignedURL to", imageSignedUrl);
     } else {
       // If the embedded image is a full image then use that

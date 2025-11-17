@@ -1,3 +1,9 @@
+/**
+ * Note: AWS security is based on an IAM user calles "expressServer"
+ * The user has a policy attached called S3Access
+ * S3Access allows teh required S3 access
+ */
+
 import express from "express";
 import articlesRouter from "./routes/articles.js";
 import authRouter from "./routes/auth.js";
@@ -24,6 +30,8 @@ const sessionStore = new pgSessionStore({
 });
 
 dotenv.config(); // Loads environment variables from .env file into process.env
+
+// console.log(process.env);
 
 const app = express();
 app.use(express.static("public")); // allows access to local file in /public directly

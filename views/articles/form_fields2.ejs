@@ -1,0 +1,54 @@
+<!-- hese fields are used in the new articel and edit article forms-->
+<!-- Title -->
+<div class="mb-3">
+  <label class="form-label fw-bold">Title</label>
+  <input
+    value="<%=article.title%>"
+    type="text"
+    name="title"
+    class="form-control"
+    required
+  />
+</div>
+
+<!-- Title Image Name -->
+<div class="mb-4">
+  <label class="form-label fw-bold">Title Image Name</label>
+  <input
+    value="<%=article.title_image%>"
+    type="text"
+    name="title_image"
+    class="form-control"
+    placeholder="Enter the name of an existing image in /cards/"
+    required
+  />
+</div>
+<!-- Tags -->
+<div class="mb-3">
+  <label class="form-label fw-bold">Tag List</label>
+  <input value = "<%=article.tag_list%>"" type="text" name="tag_list"
+  class="form-control" placeholder="e.g. javascript, nodejs" required />
+  <div class="form-text">Separate tags with commas or spaces.</div>
+</div>
+
+<!-- Description -->
+<div class="mb-3">
+  <label class="form-label fw-bold">Description</label>
+  <textarea
+    name="description"
+    class="form-control"
+    rows="3"
+    maxlength="300"
+    required
+  >
+<%=article.description%></textarea
+  >
+</div>
+
+<!-- Markdown -->
+<div class="mb-4">
+  <label class="form-label fw-bold">Article Body (markdown)</label>
+  <textarea name="markdown" class="form-control" rows="12" required>
+<%=article.markdown%></textarea
+  >
+</div>

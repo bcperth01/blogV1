@@ -14,7 +14,10 @@ import createDomPurify from "dompurify";
 import { JSDOM } from "jsdom";
 import { addArticle } from "../pgQueries/queries.js";
 import pg_pool from "../pgQueries/connectPool.js";
-import { replaceMarkdownImages } from "../utills/awsS3.js";
+import {
+  replaceMarkdownImages,
+  replaceMarkdownImagesInPreview,
+} from "../utills/awsS3.js";
 
 import { generateSignedUrl } from "../utills/awsS3.js";
 
@@ -99,6 +102,7 @@ let blankArticle = {
   article_type: "article", // 'articles' | "site page"
   published: "unpublished", // default 'unpublished' | 'pending' | 'published'
   deleted: false, // true if pending delete
+  title_image: "", // The name of an image in the bucket/cards directory
   // likes: 0, // no of likes default 0
   // views: 0, // no of vieww default 0
 };
@@ -222,7 +226,7 @@ router.get("/new", (req, res) => {
     );
     return;
   }
-  res.render("articles/new", {
+  res.render("articles/new2", {
     article: { ...blankArticle },
     res: res.locals,
   }); // renders "/views/articles/new.ejs" - the new article form
@@ -232,7 +236,7 @@ router.get("/new", (req, res) => {
 // On form submission, req.body will contain the form contents
 // Security: Only logged in users who are either admin or members can create new articles
 //           TODO: Block members from editing articles they did not create.
-router.post("/", async (req, res) => {
+router.post("/new", async (req, res) => {
   if (
     !(
       req.isAuthenticated() &&
@@ -255,6 +259,8 @@ router.post("/", async (req, res) => {
   let newArticle = { ...blankArticle };
   newArticle.title = req.body.title.trim();
   newArticle.description = req.body.description.trim();
+  newArticle.tag_list = req.body.tag_list.trim();
+  newArticle.title_image = req.body.title_image.trim();
   newArticle.markdown = removeDollarDollar(
     req.body.markdown.trim(),
     "${newArticle.markdown}"
@@ -264,12 +270,13 @@ router.post("/", async (req, res) => {
     strict: true,
   });
   console.log("newArticle", newArticle);
+
   try {
     const result = await pg_pool.query(
       `INSERT INTO articles \
-          (title, slug ,tag_list, description, markdown, published,user_id,author)\
+          (title, slug ,tag_list, description, markdown, published,user_id,author,title_image)\
        VALUES ('${newArticle.title}','${newArticle.slug}','${newArticle.tag_list}','${newArticle.description}',\
-               $$${newArticle.markdown}$$,'${newArticle.published}','${req.user.id}','${req.user.username}')`
+               $$${newArticle.markdown}$$,'${newArticle.published}','${req.user.id}','${req.user.username}', '${newArticle.title_image}')`
     );
     console.log("Result", result);
 
@@ -331,30 +338,39 @@ router.put("/:id", async (req, res, next) => {
     if (result.rows.length === 0) res.redirect("/");
     let editedArticle = { ...result.rows[0] }; // The current state of the record in Postgres
     ///Now change the fields that could have been edited and their derived fields
-    editedArticle.sanitisedHtml = dompurify.sanitize(
-      md.render(req.body.markdown.trim(), { res: res.locals })
+
+    // This is for the preview pane
+    const markdownWithImages = await replaceMarkdownImagesInPreview(
+      req.body.markdown.trim()
     );
+    editedArticle.sanitisedHtml = dompurify.sanitize(
+      md.render(markdownWithImages, { res: res.locals })
+    );
+
     editedArticle.slug = slugify(req.body.title, {
       lower: true,
       strict: true,
     });
+    editedArticle.title_image = req.body.title_image.trim();
+    editedArticle.tag_list = req.body.tag_list.trim();
     editedArticle.title = req.body.title.trim();
     editedArticle.description = req.body.description.trim();
     editedArticle.markdown = removeDollarDollar(
       req.body.markdown.trim(),
       "${editedArticle.markdown}"
     );
-    console.log("editArticle", editedArticle);
+    // console.log("editArticle", editedArticle);
     // save the changes
     const saveResult = await pg_pool.query(
       `UPDATE articles \
-         SET slug = '${editedArticle.slug}', title = '${editedArticle.title}',\
+         SET slug = '${editedArticle.slug}', tag_list = '${editedArticle.tag_list}',title = '${editedArticle.title}',\
              description = '${editedArticle.description}', markdown = $$${editedArticle.markdown}$$\
          WHERE id ='${req.params.id}'`
     );
 
     res.render("articles/edit", { article: editedArticle, res: res.locals });
   } catch (err) {
+    console.log("error", err);
     res.redirect(
       "/error/An Update Error Has Occurred in route %2Farticles%2F:id PUT"
     );
@@ -504,7 +520,7 @@ router.get("/:slug", async (req, res) => {
 
     // Process the markdown to get a list of replacements with signedURLs
     let replacements = await replaceMarkdownImages(article.markdown);
-    console.log("replacements", replacements);
+    // console.log("replacements", replacements);
 
     // Convert the MD document to HTML
     article.sanitisedHtml = dompurify.sanitize(
@@ -539,9 +555,15 @@ router.get("/edit/:slug", async (req, res) => {
     );
     if (result.rows.length === 0) res.redirect("/");
     let article = result.rows[0];
-    article.sanitisedHtml = dompurify.sanitize(
-      md.render(article.markdown.trim())
+
+    // This is for the preview pane
+    const markdownWithImages = await replaceMarkdownImagesInPreview(
+      article.markdown.trim()
     );
+    article.sanitisedHtml = dompurify.sanitize(
+      md.render(markdownWithImages, { res: res.locals })
+    );
+
     res.render("articles/edit", { article, res: res.locals });
   } catch (err) {
     res.redirect(
