@@ -117,12 +117,22 @@
                 <input type="hidden" name="key" value="<%= image.key %>" />
                 <input type="hidden" name="focusKey" value="<%= safeKey %>" />
                 <input type="hidden" name="direction" value="right" />
+
                 <button
                   type="submit"
-                  class="btn btn-outline-primary btn-sm"
+                  class="btn btn-outline-primary btn-sm rotate-btn"
                   title="Rotate Right"
                 >
-                  <i class="bi bi-arrow-clockwise"></i>
+                  <!-- Normal rotate icon -->
+                  <i class="bi bi-arrow-clockwise rotate-icon"></i>
+
+                  <!-- Spinner (hidden by default) -->
+                  <span
+                    class="spinner-border spinner-border-sm rotate-spinner"
+                    style="display: none; vertical-align: middle"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
                 </button>
               </form>
 
@@ -137,10 +147,19 @@
                 <input type="hidden" name="direction" value="left" />
                 <button
                   type="submit"
-                  class="btn btn-outline-primary btn-sm"
+                  class="btn btn-outline-primary btn-sm rotate-btn"
                   title="Rotate Left"
                 >
-                  <i class="bi bi-arrow-counterclockwise"></i>
+                  <!-- Normal rotate icon -->
+                  <i class="bi bi-arrow-counterclockwise rotate-icon"></i>
+
+                  <!-- Spinner (hidden by default) -->
+                  <span
+                    class="spinner-border spinner-border-sm rotate-spinner"
+                    style="display: none; vertical-align: middle"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
                 </button>
               </form>
 
@@ -585,6 +604,26 @@
         progressBar.style.width = "0%";
         progressBar.classList.remove("bg-danger", "bg-success");
         progressContainer.style.display = "none";
+      });
+    </script>
+    // This script ids for display a spinner while images are rotating
+    <script>
+      document.querySelectorAll(".rotate-btn").forEach((btn) => {
+        btn.addEventListener("click", function (e) {
+          e.preventDefault(); // stop auto-submit
+
+          const form = btn.closest("form");
+          const icon = btn.querySelector(".rotate-icon");
+          const spinner = btn.querySelector(".rotate-spinner");
+
+          // Swap icon → spinner
+          btn.disabled = true;
+          icon.style.display = "none";
+          spinner.style.display = "inline-block";
+
+          // Submit normally
+          form.submit();
+        });
       });
     </script>
   </body>

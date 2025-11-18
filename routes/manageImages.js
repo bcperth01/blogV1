@@ -35,7 +35,7 @@ import multer from "multer"; // for uploading files
 
 // This cache avoids reloading a long list of thumbnails from s3 on every reload
 import NodeCache from "node-cache";
-const cache = new NodeCache({ stdTTL: 300 }); // 300 seconds = 5 minutes
+const cache = new NodeCache({ stdTTL: 3600 }); // 3600 seconds = 1 hour
 
 const router = express.Router();
 
@@ -73,12 +73,22 @@ router.post("/rotate-image", async (req, res) => {
 
   if (!key) return res.status(400).send("Missing image key");
 
-  // rotate the thumbnail
+  // rotate the thumbnails
   try {
     await rotateImage(key, direction);
   } catch (err) {
     console.error(err);
     res.status(500).send("Error rotating thumbnail image");
+  }
+
+  // rotate the cards
+  try {
+    // ✅ Replace 'thumbnails/' prefix with 'images/'
+    let keyNew = key.replace(/^thumbnails\//, "cards/");
+    await rotateImage(keyNew, direction);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error rotating card image");
   }
 
   // rotate the full image
@@ -91,17 +101,8 @@ router.post("/rotate-image", async (req, res) => {
     res.status(500).send("Error rotating full image");
   }
 
-  // Update cache entry’s signed URL (invalidate old one)
-  // Note: The S3 images are already rotated and saved
-  const images = cache.get("s3_images");
-  if (images) {
-    const updated = await Promise.all(
-      images.map(async (img) =>
-        img.key === key ? { ...img, url: await generateSignedUrl(key) } : img
-      )
-    );
-    cache.set("s3_images", updated);
-  }
+  // update the signed URL of the rotated image
+  await updateRotatedImageInCache(key);
 
   // Append ?focus=<key> to URL so frontend knows which image was rotated
   const redirectUrl = new URL(
@@ -111,6 +112,26 @@ router.post("/rotate-image", async (req, res) => {
   redirectUrl.searchParams.set("focus", focusKey);
   res.redirect(redirectUrl.toString());
 });
+
+// Local utility cretae a new signedYRL for a rotated image and update the cache
+async function updateRotatedImageInCache(key) {
+  const list = cache.get("s3_images") || [];
+
+  // Find the item in the cache
+  const index = list.findIndex((item) => item.key === key);
+  if (index === -1) return;
+
+  // Generate a new signed URL (forces fresh image)
+  const newUrl = await generateSignedUrl(key);
+
+  // Replace the cached entry
+  list[index] = {
+    ...list[index],
+    url: newUrl,
+  };
+
+  cache.set("s3_images", list);
+}
 
 // Local utility to Rotate the image and save to S3
 async function rotateImage(key, direction) {
@@ -151,14 +172,27 @@ function streamToBuffer(stream) {
   });
 }
 
+// Remove an item from the cacne
+function removeImageFromCache(s3Key) {
+  // Load current cache list
+  let list = cache.get("s3_images") || [];
+
+  // Remove any object whose key matches the deleted S3 key
+  list = list.filter((item) => item.key !== s3Key);
+
+  // Store updated list back into cache
+  cache.set("s3_images", list);
+}
+
 // Route to delete an image in both /thumbnails and /images
 // TODO. This needs to be updated to generate the right keys and do 2 deletes
 // TODO: Add security
 router.post("/delete-image", async (req, res) => {
-  const { key } = req.body;
+  let key = req.body.key; // will be like key thumbnails/Aus Seniors Medal.jpg
 
   if (!key) return res.status(400).send("Missing image key");
 
+  // delete the image in thumbnails/
   try {
     await s3.send(
       new DeleteObjectCommand({
@@ -166,6 +200,17 @@ router.post("/delete-image", async (req, res) => {
         Key: key,
       })
     );
+
+    // delete the image in images/
+    await s3.send(
+      new DeleteObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key.replace("thumbnails", "images"),
+      })
+    );
+
+    // update the cache
+    removeImageFromCache(key);
 
     res.redirect(req.get("Referrer") || "/"); // reload the page
   } catch (error) {
@@ -354,7 +399,7 @@ router.post("/uploadImage", upload.single("imageFile"), async (req, res) => {
     // ------------------------------
     let list = cache.get("s3_images") || [];
 
-    // Your UI likely expects S3 object-style objects
+    // Add the new image to the cache
     list.push({
       key: thumbKey,
       title: thumbKey.split("/").pop(),

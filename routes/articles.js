@@ -229,7 +229,7 @@ router.get("/new", (req, res) => {
   res.render("articles/new2", {
     article: { ...blankArticle },
     res: res.locals,
-  }); // renders "/views/articles/new.ejs" - the new article form
+  }); // renders "/views/articles/new2.ejs" - the new article form
 });
 
 // Reach here on "new form" submission. POST to /articles/ to save a new article
@@ -286,7 +286,7 @@ router.post("/new", async (req, res) => {
     res.redirect(`articles/edit/${newArticle.slug}`); // for now continue editing until Cancel or Done pressed
   } catch (error) {
     console.log("error", error);
-    res.render("articles/new", { article: newArticle, res: res.locals }); // renders "/views/articles/new.ejs" - the new article form, which should show the values already entered
+    res.render("articles/new2", { article: newArticle, res: res.locals }); // renders "/views/articles/new2.ejs" - the new article form, which should show the values already entered
   }
 });
 
@@ -363,7 +363,7 @@ router.put("/:id", async (req, res, next) => {
     // save the changes
     const saveResult = await pg_pool.query(
       `UPDATE articles \
-         SET slug = '${editedArticle.slug}', tag_list = '${editedArticle.tag_list}',title = '${editedArticle.title}',\
+         SET slug = '${editedArticle.slug}', tag_list = '${editedArticle.tag_list}',title = '${editedArticle.title}', title_image = '${editedArticle.title_image}',\
              description = '${editedArticle.description}', markdown = $$${editedArticle.markdown}$$\
          WHERE id ='${req.params.id}'`
     );
