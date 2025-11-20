@@ -461,7 +461,7 @@ router.get("/", async (req, res) => {
       return 0;
     });
 
-    // Create a signedUrl for each article (they are in the S3 /cards/ prefix)
+    // Create a signedUrl for each article image (they are in the S3 /cards/ prefix)
     const articles = await Promise.all(
       result.rows.map(async (a) => {
         const key = `cards/${a.title_image.trim()}`;

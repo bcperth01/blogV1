@@ -20,7 +20,78 @@
 ></script>
 <link type="text/css" href="/styles/github-dark.min.css" rel="stylesheet" />
 <style>
+  /* for the right click MD editor custom menu */
+  .custom-menu {
+    display: none;
+    position: absolute;
+    z-index: 10000;
+    width: 260px;
+    padding: 0;
+    border-radius: 6px;
+    background: white;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  }
+
+  /* menu items */
+  .custom-menu .list-group-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    user-select: none;
+    border: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .custom-menu .list-group-item:hover {
+    background: #f6f7f8;
+  }
+
+  /* submenus */
+  .has-submenu {
+    position: relative;
+  }
+  .submenu {
+    display: none;
+    position: absolute;
+    left: 100%;
+    top: 0;
+    min-width: 220px;
+    background: white;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    border-radius: 6px;
+    padding: 4px 0;
+  }
+  .has-submenu:hover > .submenu {
+    display: block;
+  }
+
+  /* submenu item */
+  .submenu-item {
+    padding: 8px 12px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .submenu-item:hover {
+    background: #eef2f5;
+  }
+
+  /* cancel */
+  .list-group-item.text-danger {
+    color: #c82333;
+  }
+
+  /* auto-resize textarea */
+  textarea.auto-resize {
+    overflow-y: hidden;
+    transition: height 0.12s ease;
+  }
+
   /* For the article cards */
+  .article-card-wrapper {
+    width: 250px; /* ← set your fixed card width */
+    flex: 0 0 auto; /* prevents shrinking */
+  }
   .description-ellipsis {
     display: -webkit-box;
     -webkit-line-clamp: 3; /* Number of lines to show */

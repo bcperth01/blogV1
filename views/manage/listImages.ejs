@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <%- include('../components/head') %>
-    <title>List Images</title>
+    <title>Images</title>
     <style>
       .card img {
         object-fit: cover;
@@ -42,9 +42,7 @@
     <!-- container for header -->
     <div class="container"><%- include('../components/header') %></div>
 
-    <div class="container mt-5">
-      <h1 class="mb-4 text-center">Images (in S3)</h1>
-
+    <div class="container mt-2">
       <% if (images.length === 0) { %>
       <div class="alert alert-warning text-center">
         No Images Found In the Bucket
@@ -61,14 +59,21 @@
             type="text"
             name="filter"
             value="<%= filter || '' %>"
-            placeholder="Filter images..."
+            placeholder="Find images..."
             class="form-control me-2"
           />
           <button class="btn btn-outline-secondary" type="submit">
             Filter
           </button>
         </form>
-
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm"
+          data-bs-toggle="modal"
+          data-bs-target="#notesModal"
+        >
+          About Images
+        </button>
         <!-- Upload button -->
         <button
           class="btn btn-primary"
@@ -182,15 +187,12 @@
               </form>
             </td>
             <td>
-              <!-- ✅ Select Button -->
-              <form
-                action="/manageImages/selectImage/<%= encodeURIComponent(image.key.replace(/^thumbnails\//, '')) %>"
-                method="POST"
+              <button
+                class="btn btn-sm btn-success copy-btn"
+                data-filename="<%= image.key %>"
               >
-                <button type="submit" class="btn btn-primary btn-sm">
-                  Select
-                </button>
-              </form>
+                Select
+              </button>
             </td>
           </tr>
 
@@ -198,6 +200,61 @@
         </tbody>
       </table>
       <% } %>
+    </div>
+
+    <!-- About Images Modal -->
+    <div class="modal fade" id="notesModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Notes About Images</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+
+          <div class="modal-body">
+            <p>
+              When you upload an image, its best to upload the highest res you
+              have. Three versions will be automatically produced and saved;
+              thumbnails, cards and high res.
+            </p>
+
+            <ul>
+              <li>
+                All images are stored in an AWS S3 bucket and there is no public
+                access.
+              </li>
+              <li>
+                Images are accessed by the site using short life signed URLs.
+              </li>
+              <li>Click on a thumbnail to see the high res version.</li>
+              <li>Rotating left or right by 90Deg will rotate all versions.</li>
+              <li>Deleting removes all versions.</li>
+              <li>
+                When uploading, the image name you give must not already exist.
+              </li>
+              <li>Images are converted to jpg when they are uploaded.</li>
+              <li>
+                When you Select an image its name goes into the clipboard, for
+                you to embed in a document
+              </li>
+            </ul>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Bootstrap Modal for full image display -->
@@ -606,7 +663,7 @@
         progressContainer.style.display = "none";
       });
     </script>
-    // This script ids for display a spinner while images are rotating
+    <!-- This script displays a spinner while images are rotating-->
     <script>
       document.querySelectorAll(".rotate-btn").forEach((btn) => {
         btn.addEventListener("click", function (e) {
@@ -623,6 +680,31 @@
 
           // Submit normally
           form.submit();
+        });
+      });
+    </script>
+    <!-- This script is to copy the image filename to the clipboard when Select is pressed-->
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll(".copy-btn").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const filename = btn.dataset.filename;
+
+            try {
+              await navigator.clipboard.writeText(filename);
+
+              // Optional: give quick feedback
+              btn.textContent = "Copied!";
+              btn.classList.add("btn-warning");
+
+              setTimeout(() => {
+                btn.textContent = "Select";
+                btn.classList.remove("btn-warning");
+              }, 1200);
+            } catch (err) {
+              alert("Copy failed. Your browser may block clipboard access.");
+            }
+          });
         });
       });
     </script>

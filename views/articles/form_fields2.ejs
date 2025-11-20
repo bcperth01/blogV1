@@ -48,7 +48,132 @@
 <!-- Markdown -->
 <div class="mb-4">
   <label class="form-label fw-bold">Article Body (markdown)</label>
-  <textarea name="markdown" class="form-control" rows="12" required>
-<%=article.markdown%></textarea
+  <textarea
+    id="markdownEditor"
+    class="form-control auto-resize"
+    rows="3"
+    name="markdown"
+  >
+<%=article.markdown%>
+</textarea
   >
 </div>
+
+<!-- CONTEXT MENU -->
+<ul
+  id="customMenu"
+  class="custom-menu list-group shadow"
+  role="menu"
+  aria-hidden="true"
+>
+  <!-- SUBMENU GROUP: Headings -->
+  <li class="list-group-item has-submenu" role="presentation">
+    Headings →
+    <ul class="submenu" role="menu" aria-label="Headings">
+      <li class="submenu-item" data-action="h1" role="menuitem" tabindex="-1">
+        Heading 1
+      </li>
+      <li class="submenu-item" data-action="h2" role="menuitem" tabindex="-1">
+        Heading 2
+      </li>
+    </ul>
+  </li>
+
+  <!-- SUBMENU: Formatting -->
+  <li class="list-group-item has-submenu" role="presentation">
+    Formatting →
+    <ul class="submenu" role="menu" aria-label="Formatting">
+      <li class="submenu-item" data-action="bold" role="menuitem" tabindex="-1">
+        Bold
+      </li>
+      <li
+        class="submenu-item"
+        data-action="italic"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Italic
+      </li>
+      <li
+        class="submenu-item"
+        data-action="inlineCode"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Inline Code
+      </li>
+      <li
+        class="submenu-item"
+        data-action="codeBlock"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Code Block
+      </li>
+    </ul>
+  </li>
+
+  <!-- SUBMENU: Lists -->
+  <li class="list-group-item has-submenu" role="presentation">
+    Lists →
+    <ul class="submenu" role="menu" aria-label="Lists">
+      <li
+        class="submenu-item"
+        data-action="ulist"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Unordered List
+      </li>
+      <li
+        class="submenu-item"
+        data-action="olist"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Ordered List
+      </li>
+    </ul>
+  </li>
+
+  <!-- SUBMENU: Snippets -->
+  <li class="list-group-item has-submenu" role="presentation">
+    Snippets →
+    <ul class="submenu" role="menu" aria-label="Snippets">
+      <li
+        class="submenu-item"
+        data-action="insertTable"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Insert Table
+      </li>
+      <li
+        class="submenu-item"
+        data-action="insertImage"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Insert Image
+      </li>
+      <li
+        class="submenu-item"
+        data-action="insertLink"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Insert Link
+      </li>
+    </ul>
+  </li>
+
+  <!-- CANCEL -->
+  <li
+    class="list-group-item text-danger"
+    data-action="cancel"
+    role="menuitem"
+    tabindex="-1"
+  >
+    Cancel
+  </li>
+</ul>

@@ -1,4 +1,8 @@
 /**
+ * Note: There are 3 versions of every image stored in S3
+ *  bcperthblog/images/ contains res width 3096
+ *  bcperthblog/cards/ contains res width 400
+ *  bcperthblog/thumbnails/ contains res width 200
  * Managing images = 
  *    -Viewing a filtered list of thumbnails with their filenames
  *    -Clicking a thumbnail and displaying the 
@@ -113,7 +117,7 @@ router.post("/rotate-image", async (req, res) => {
   res.redirect(redirectUrl.toString());
 });
 
-// Local utility cretae a new signedYRL for a rotated image and update the cache
+// Local utility create a new signedURL for a rotated image and update the cache
 async function updateRotatedImageInCache(key) {
   const list = cache.get("s3_images") || [];
 
@@ -198,6 +202,14 @@ router.post("/delete-image", async (req, res) => {
       new DeleteObjectCommand({
         Bucket: BUCKET_NAME,
         Key: key,
+      })
+    );
+
+    // delete the image in cards/
+    await s3.send(
+      new DeleteObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key.replace("thumbnails", "cards"),
       })
     );
 
@@ -303,6 +315,7 @@ router.get("/getImage/:key", async (req, res, next) => {
 
 // TODO: Add security
 // TODO: Intergrate this with the MD editor to allow embedding the selected image
+// DELETEME
 router.post("/selectImage/:key", (req, res) => {
   const key = decodeURIComponent(req.params.key);
   console.log("Selected image:", key);
@@ -313,9 +326,6 @@ router.post("/selectImage/:key", (req, res) => {
 // API to upload an in image that has been drag dropped to the upload modal
 router.post("/uploadImage", upload.single("imageFile"), async (req, res) => {
   try {
-    // ------------------------------
-    // STEP 1: Basic validation
-    // ------------------------------
     if (!req.file || !req.body.imageName) {
       return res.status(400).json({ error: "Missing name or file." });
     }
@@ -329,8 +339,9 @@ router.post("/uploadImage", upload.single("imageFile"), async (req, res) => {
 
     const fullKey = `images/${safeName}`;
     const thumbKey = `thumbnails/${safeName}`;
+    const cardKey = `cards/${safeName}`;
 
-    // STEP 2: CHECK IF FILE ALREADY EXISTS
+    // check in bucket/images if a file of that name already exists
     try {
       await s3.send(
         new HeadObjectCommand({
@@ -339,7 +350,7 @@ router.post("/uploadImage", upload.single("imageFile"), async (req, res) => {
         })
       );
 
-      // If we reach here → file exists
+      // file already exists
       return res.status(409).json({
         error: "An image with that name already exists.",
       });
@@ -362,29 +373,33 @@ router.post("/uploadImage", upload.single("imageFile"), async (req, res) => {
       }
     }
 
-    // ------------------------------
-    // STEP 3: Create thumbnail
-    // ------------------------------
+    // Create images, thumbnails and cards versions
     const thumbBuffer = await sharp(req.file.buffer)
-      .resize(300)
+      .resize(200)
       .jpeg({ quality: 80 })
       .toBuffer();
 
-    // ------------------------------
-    // STEP 4: Upload full-size image
-    // ------------------------------
+    const cardBuffer = await sharp(req.file.buffer)
+      .resize(400)
+      .jpeg({ quality: 80 })
+      .toBuffer();
+
+    const imageBuffer = await sharp(req.file.buffer)
+      .resize(3096)
+      .jpeg({ quality: 80 })
+      .toBuffer();
+
+    // Upload images version
     await s3.send(
       new PutObjectCommand({
         Bucket: process.env.S3_BUCKET_NAME,
         Key: fullKey,
-        Body: req.file.buffer,
+        Body: imageBuffer,
         ContentType: "image/jpeg",
       })
     );
 
-    // ------------------------------
-    // STEP 5: Upload thumbnail
-    // ------------------------------
+    // Upload thumbnails version
     await s3.send(
       new PutObjectCommand({
         Bucket: process.env.S3_BUCKET_NAME,
@@ -394,9 +409,17 @@ router.post("/uploadImage", upload.single("imageFile"), async (req, res) => {
       })
     );
 
-    // ------------------------------
-    // STEP 5B: UPDATE CACHE
-    // ------------------------------
+    // Upload cards version
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: cardKey,
+        Body: cardBuffer,
+        ContentType: "image/jpeg",
+      })
+    );
+
+    // Insert the new image in the cache
     let list = cache.get("s3_images") || [];
 
     // Add the new image to the cache
@@ -408,9 +431,7 @@ router.post("/uploadImage", upload.single("imageFile"), async (req, res) => {
 
     cache.set("s3_images", list);
 
-    // ------------------------------
-    // STEP 6: Respond success
-    // ------------------------------
+    //Respond success
     res.json({ success: true });
   } catch (err) {
     console.error("Upload error:", err);

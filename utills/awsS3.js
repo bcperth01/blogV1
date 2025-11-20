@@ -33,7 +33,7 @@ export async function generateSignedUrl(Key) {
 }
 
 // -------- Replace Markdown Images with signed S3 URLs --------
-// note: This version is for the preview screen and does not allow clicking to see the full image
+// note: This version is for the preview pane when editing and does not allow clicking to see the full image
 export async function replaceMarkdownImagesInPreview(markdown) {
   // Regex to match markdown images: ![alt](url)
   const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
