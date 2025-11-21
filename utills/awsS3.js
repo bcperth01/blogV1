@@ -86,6 +86,7 @@ export async function replaceMarkdownImages(markdown) {
   // (which is allowed but very unusual ... and breaks typescript according to the AI)
   while ((match = imageRegex.exec(markdown)) !== null) {
     const embeddedKey = match[1]; // which should contain the key and filename like "thumbnails/imageName.png"
+    console.log("embedded key", embeddedKey);
     const thumbnailSignedUrl = await generateSignedUrl(embeddedKey);
 
     let imageSignedUrl = "";
@@ -94,7 +95,7 @@ export async function replaceMarkdownImages(markdown) {
       imageSignedUrl = await generateSignedUrl(
         embeddedKey.replace("thumbnails", "images")
       );
-      console.log("Changing imageSignedURL to", imageSignedUrl);
+      //console.log("Changing imageSignedURL to", imageSignedUrl);
     } else {
       // If the embedded image is a full image then use that
       imageSignedUrl = thumbnailSignedUrl;
@@ -107,6 +108,7 @@ export async function replaceMarkdownImages(markdown) {
     });
   }
 
+  console.log("replacements", replacements);
   return replacements;
 }
 

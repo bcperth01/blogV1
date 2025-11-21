@@ -1,12 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <!-- The head has the CDN includes and the global <style>-->
     <%- include('../components/head') %>
     <title>Articles</title>
   </head>
   <body>
     <div class="container">
-      <%- include('../components/header') %>
+      <!-- wrapper to make the navbars sticky-->
+      <div class="sticky-stack sticky-top">
+        <%- include('../components/header') %>
+      </div>
       <!-- outside div -->
       <div class="d-flex flex-column flex-md-row gap-2 mt-2">
         <!-- section1 div -->
@@ -35,12 +39,6 @@
             <a href="/articles/?filter=pending" class="btn btn-secondary btn-sm"
               >Pending</a
             >
-            <% } %>
-          </div>
-          <div>
-            <% if(res.loggedIn && (res.member_type === "member" ||
-            res.member_type === "admin")) {%>
-            <a href="/articles/new" class="btn btn-primary btn-sm">Add New</a>
             <% } %>
           </div>
         </div>

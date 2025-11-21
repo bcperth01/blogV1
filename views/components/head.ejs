@@ -20,6 +20,29 @@
 ></script>
 <link type="text/css" href="/styles/github-dark.min.css" rel="stylesheet" />
 <style>
+  /* to makes sticky stacks transparent */
+  .sticky-stack {
+    background: white; /* prevents transparent overlay issue */
+    z-index: 1020; /* same as Bootstrap sticky-top */
+  }
+
+  /* for the loading overlay */
+  #loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.4s ease;
+  }
+  /* for the article card images*/
+  .card img {
+    object-fit: cover;
+    height: 150px;
+  }
+
   /* for the right click MD editor custom menu */
   .custom-menu {
     display: none;

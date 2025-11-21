@@ -1,12 +1,16 @@
 <!-- The "Home" page is implemented as an articles with slug "Home-page" -->
 <!DOCTYPE html>
 <html lang="en">
-  <head><%- include('../components/head') %> 
+  <head>
+    <%- include('../components/head') %>
     <title>Home</title>
   </head>
   <body>
     <div class="container">
-      <%- include('../components/header') %>
+      <!-- wrapper to make the navbars sticky-->
+      <div class="sticky-stack sticky-top">
+        <%- include('../components/header') %>
+      </div>
       <div class="row justify-content-center pt-5 border border-4">
         <div class="col-12 col-sm-10 col-md-8"><%-article.sanitisedHtml%></div>
       </div>

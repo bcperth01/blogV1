@@ -226,10 +226,10 @@ router.get("/new", (req, res) => {
     );
     return;
   }
-  res.render("articles/new2", {
+  res.render("articles/new", {
     article: { ...blankArticle },
     res: res.locals,
-  }); // renders "/views/articles/new2.ejs" - the new article form
+  }); // renders "/views/articles/new.ejs" - the new article form
 });
 
 // Reach here on "new form" submission. POST to /articles/ to save a new article
@@ -286,7 +286,7 @@ router.post("/new", async (req, res) => {
     res.redirect(`articles/edit/${newArticle.slug}`); // for now continue editing until Cancel or Done pressed
   } catch (error) {
     console.log("error", error);
-    res.render("articles/new2", { article: newArticle, res: res.locals }); // renders "/views/articles/new2.ejs" - the new article form, which should show the values already entered
+    res.render("articles/new", { article: newArticle, res: res.locals }); // renders "/views/articles/new.ejs" - the new article form, which should show the values already entered
   }
 });
 
@@ -527,12 +527,51 @@ router.get("/:slug", async (req, res) => {
       md.render(article.markdown.trim())
     );
 
+    /* Note: when we reach here the "original" urls will have been changed by dompurify() .. for eg
+      ![Bed Brekky](thumbnails/Track B&B Balinyup House.jpg) will be changed to
+      ![Bed Brekky](thumbnails/Track B&amp;B Balinyup House.jpg) 
+      ie special chars like & in the name will be changed to the HTML special char &amp;
+      This means a straigt string replacement of the original will not work
+      Instead we need to escape the original also so it will match whats in the converted documnet.
+    */
+
+    function escapeEntitiesInMarkdownUrl(md) {
+      return md.replace(/\(([^)]+)\)/g, (_, url) => {
+        return (
+          "(" +
+          url
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;") +
+          ")"
+        );
+      });
+    }
+
     // Replace the image references with the signed URLS
     replacements.forEach(({ original, thumbnailSignedUrl, imageSignedUrl }) => {
+      console.log("before HTML", article.sanitisedHtml);
+      console.log("original", original);
+      console.log("---------------------------------------------");
+      console.log("thumbnailSignedUrl", thumbnailSignedUrl);
+      console.log("---------------------------------------------");
+      console.log("iamgeSignedUrl", imageSignedUrl);
+      const replacement =
+        "<img src=" +
+        thumbnailSignedUrl +
+        " data-full=" +
+        imageSignedUrl +
+        " style=max-width: 100%; border-radius: 8px; margin: 20px 0>";
+      console.log("---------------------------------------------");
+      console.log("replacement", replacement);
       article.sanitisedHtml = article.sanitisedHtml.replace(
-        original,
-        `<img src="${thumbnailSignedUrl}" data-full="${imageSignedUrl}" style="max-width: 100%; border-radius: 8px; margin: 20px 0;">`
+        escapeEntitiesInMarkdownUrl(original),
+        replacement
       );
+      console.log("---------------------------------------------");
+      console.log("after", article.sanitisedHtml);
     });
 
     // render the article

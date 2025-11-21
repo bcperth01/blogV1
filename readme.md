@@ -73,7 +73,7 @@ There are four **ejs** template files, all located in `/view/articles/` director
     `_form_fields` has:\
     `Save` button of `type submit` which submits the form as above\
     ``Exit without Save` button which redirects to `/` **GET**\
-3. **new2.ejs** Display edit form for a new article \
+3. **new.ejs** Display edit form for a new article \
    The `new` template imports the `form_fields` partial template\
    The form is submitted to `/articles/` **POST**\
     `_form_fields` has:\

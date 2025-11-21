@@ -6,7 +6,11 @@
   </head>
   <body>
     <div class="container">
-      <%- include('../components/header') %>
+      <!-- wrapper to make the navbars sticky-->
+      <div class="sticky-stack sticky-top">
+        <%- include('../components/header') %>
+      </div>
+      >
       <h2 class="mb-4">Create New Article</h2>
 
       <form action="/articles/new" method="POST">

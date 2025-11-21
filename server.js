@@ -66,7 +66,7 @@ app.use((req, res, next) => {
   res.locals.username = req.isAuthenticated() ? req.user.username : "";
   res.locals.member_type = req.isAuthenticated() ? req.user.member_type : "";
   res.locals.id = req.isAuthenticated() ? req.user.id : "";
-  // console.log("res.locals", res.locals);
+  res.locals.path = req.path; // passes the path to ejs to display menu items conditionally
   next();
 });
 

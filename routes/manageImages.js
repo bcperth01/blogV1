@@ -265,7 +265,7 @@ async function getImages(forceRefresh = false) {
   return images;
 }
 
-// here is the actual listImages2 route
+// listImages2 route
 router.get("/listImages2", async (req, res) => {
   const filter = (req.query.filter || "").toLowerCase().trim();
   const images = await getImages(); // always returns full cached list

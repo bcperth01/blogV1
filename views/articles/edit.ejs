@@ -6,7 +6,10 @@
   </head>
   <body>
     <div class="container">
-      <%- include('../components/header') %>
+      <!-- wrapper to make the navbars sticky-->
+      <div class="sticky-stack sticky-top">
+        <%- include('../components/header') %>
+      </div>
       <div class="row">
         <div class="col leftside">
           <h1 class="mb-4">Edit Article Form...</h1>
@@ -32,7 +35,7 @@
       </div>
     </div>
 
-    <!-- Custom Context Menu -->
+    <!-- Custom Context Menu  -->
     <script>
       const textarea = document.getElementById("markdownEditor");
       const menu = document.getElementById("customMenu");
