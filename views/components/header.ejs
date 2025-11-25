@@ -35,7 +35,7 @@
           >
         </li>
         <!-- Only show this if we are on the routes shown -->
-        <% if (['/articles', '/articles/new'].includes(path)) { %>
+        <% if (path.startsWith("/articles")) { %>
         <li class="nav-item dropdown">
           <a
             class="nav-link dropdown-toggle"
@@ -48,11 +48,21 @@
             File
           </a>
           <ul class="dropdown-menu">
+            <% if (path.startsWith("/articles/display/")) { %>
+                <li>
+                  <a class="dropdown-item" href="/articles/edit/<%= path.replace("/articles/display/", "") %>">Edit</a>
+               </li>
+               <li>
+                  <a class="dropdown-item text-danger" href="#" id="menuDelete" data-path="<%= path %>">
+                      Delete
+                  </a>
+               </li>
+            <% } %>
             <li>
               <a class="dropdown-item" href="/articles/new">New Article</a>
             </li>
             <li>
-              <a class="dropdown-item" href="/auth/manageUsers">Save</a>
+              <a class="dropdown-item" href="#" id="menuSave">Save</a>
             </li>
             <li>
               <a class="dropdown-item" href="/manageImages/listImages2"
@@ -162,3 +172,6 @@
     </div>
   </div>
 </nav>
+
+
+

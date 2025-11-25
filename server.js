@@ -40,6 +40,7 @@ app.use(express.static("public")); // allows access to local file in /public dir
 app.set("view engine", "ejs");
 
 // middleware
+app.use(express.json()); // for parsing jSON encoded body
 app.use(express.urlencoded({ extended: false })); // extracts the body to make it available as res.body
 app.use(methodOverride("_method")); // the string we use to indicate the desired method (that is not native to Form submit)
 app.use(express.static("public")); // To enable public assets to be found by the browser,see https://expressjs.com/en/starter/static-files.html

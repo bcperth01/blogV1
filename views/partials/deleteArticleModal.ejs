@@ -1,0 +1,130 @@
+<!-- This code is included in 2 places where an article can be deleted -->
+<!--  -In the File-Delete menu item when a file is being displayed -->
+<!--  -In the card delete button when the articles list is being displayed -->
+<!-- Delete (Article) Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirm Delete</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to delete article titled:
+        <strong><span id="deleteSlug"></span></strong>?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button type="button" id="confirmDeleteBtn" class="btn btn-danger">
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container to confirm deletion-->
+<div id="toastWrapper" class="p-2" style="width: 100%">
+  <div
+    id="deleteToast"
+    class="toast text-bg-success w-100"
+    role="alert"
+    aria-live="assertive"
+    aria-atomic="true"
+    data-bs-delay="2500"
+  >
+    <div class="d-flex">
+      <div class="toast-body" id="deleteToastBody">
+        File deleted successfully.
+      </div>
+      <button
+        type="button"
+        class="btn-close btn-close-white me-2 m-auto"
+        data-bs-dismiss="toast"
+      ></button>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    let partsArray = [];
+    let article_slug = "";
+
+    const modalEl = document.getElementById("deleteConfirmModal");
+    const modal = new bootstrap.Modal(modalEl);
+
+    document.body.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-path].delete-article, #menuDelete");
+      if (!btn) return;
+
+      e.preventDefault();
+
+      // --- Close dropdown if open ---
+      const openDropdown = document.querySelector(".dropdown.show");
+
+      if (openDropdown) {
+        const trigger = openDropdown.querySelector(
+          "[data-bs-toggle='dropdown']"
+        );
+        const dd = bootstrap.Dropdown.getInstance(trigger);
+        if (dd) dd.hide();
+      }
+
+      // Note: If we are responding to the file-delete menu then data-path attribute will contain the
+      //       full route that contains the article slug at the end as in /articles/display/article-title
+      //       If we are responding to the  "delete" button on the cards then the data-path attribute will
+      //       conatin the slug only.
+      // Extract the slug irrespective of its source
+      partsArray = btn.dataset.path.split("/");
+      article_slug = partsArray[partsArray.length - 1];
+      // pass the filename to the confirm modal
+      document.getElementById("deleteSlug").textContent = article_slug.replace(
+        "-",
+        " "
+      );
+
+      modal.show();
+    });
+
+    document
+      .getElementById("confirmDeleteBtn")
+      .addEventListener("click", async () => {
+        const response = await fetch("/articles/delete", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slug: article_slug }),
+        });
+
+        const result = await response.json();
+
+        // close the modal before redirect
+        modal.hide();
+
+        // Redirect based on the delete result
+        // Note: Console logs before this point will only be displayed momemtarily - so not visible
+        //       If you need console messages you can write them to localStorage or delay the redirect for a few secs for debug
+        if (result.unauth) {
+          window.location.href = "/auth/unauthorised?err_msg=" + result.message;
+        } else if (!result.success) {
+          // Redirect to articles list or dashboard
+          window.location.href =
+            "/error/A Delete Error Has Occurred in route %2Farticles%2Fdelete";
+        } else {
+          // Show toast
+          const toastEl = document.getElementById("deleteToast");
+          const toast = new bootstrap.Toast(toastEl);
+          toast.show();
+          setTimeout(() => {
+            window.location.href = `/articles/?filter=user_id`;
+          }, 1500);
+        }
+      });
+  });
+</script>

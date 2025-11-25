@@ -6,7 +6,7 @@
     <title>Articles</title>
   </head>
   <body>
-    <div class="container">
+    <div class="container border">
       <!-- wrapper to make the navbars sticky-->
       <div class="sticky-stack sticky-top">
         <%- include('../components/header') %>
@@ -102,7 +102,10 @@
 
             <!-- Footer -->
             <div class="card-footer bg-white d-flex justify-content-between">
-              <a href="/articles/<%= a.slug %>" class="text-decoration-none">
+              <a
+                href="/articles/display/<%= a.slug %>"
+                class="text-decoration-none"
+              >
                 Read more →
               </a>
 
@@ -113,11 +116,13 @@
                   >Edit</a
                 >
                 <a
-                  href="/articles/delete/<%= a.slug %>"
-                  class="text-danger text-decoration-none"
-                  onclick="return confirm('Delete this article?');"
-                  >Delete</a
+                  class="dropdown-item text-danger"
+                  href="#"
+                  id="menuDelete"
+                  data-path="<%= a.slug %>"
                 >
+                  Delete
+                </a>
               </div>
             </div>
           </div>
@@ -125,6 +130,8 @@
         <% }) %>
       </div>
       <% } %>
+      <!-- Delete (Article) Confirmation Modal -->
+      <%- include('../partials/deleteArticleModal') %>
     </div>
   </body>
 </html>

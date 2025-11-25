@@ -10,15 +10,8 @@
       <div class="sticky-stack sticky-top">
         <%- include('../components/header') %>
       </div>
-      >
       <h2 class="mb-4">Create New Article</h2>
-
-      <form action="/articles/new" method="POST">
-        <%- include('form_fields2') %>
-        <!-- Buttons -->
-        <button type="submit" class="btn btn-primary px-4">Save</button>
-        <a href="/articles" class="btn btn-outline-secondary ms-2">Cancel</a>
-      </form>
+      <form id="editForm"><%- include('form_fields2') %></form>
     </div>
   </body>
 </html>

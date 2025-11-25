@@ -13,20 +13,8 @@
       <div class="row">
         <div class="col leftside">
           <h1 class="mb-4">Edit Article Form...</h1>
-          <form action="/articles/<%= article.id %>?_method=PUT" method="POST">
-            <%- include('form_fields2') %>
-            <div class="mt-3">
-              <a href="/" class="btn btn-secondary">Exit Without Save</a>
-              <button
-                type="submit"
-                class="btn btn-primary"
-                name="button"
-                value="Save"
-              >
-                Save
-              </button>
-            </div>
-          </form>
+          <div id="status" style="margin-top: 10px"></div>
+          <form id="editForm"><%- include('form_fields2') %></form>
         </div>
         <div class="col rightside">
           <h2 class="mb-4">Preview of Article Body (images shown)</h2>
@@ -98,6 +86,10 @@
             break;
           case "h2":
             snippet = "## Heading 2\n\n";
+            res.render("about/about", {
+              article,
+              res: res.locals,
+            });
             break;
           case "bold":
             snippet = "**bold text**";
@@ -138,5 +130,124 @@
         menu.style.display = "none";
       });
     </script>
+
+    <!-- handling edit changes and saving  -->
+    <% if (path.startsWith("/articles")) { %>
+    <script>
+      const status = document.getElementById("status");
+      const saveBtn = document.getElementById("menuSave");
+
+      // 1. SELECT ALL FORM FIELDS
+      const fields = Array.from(
+        document.querySelectorAll("#editForm input, #editForm textarea")
+      );
+
+      // Store initial values
+      let originalValues = {};
+      fields.forEach((f) => (originalValues[f.id] = f.value));
+
+      let isDirty = false;
+
+      // Warn the user before leaving the page if there are unsaved changes
+      window.addEventListener("beforeunload", (e) => {
+        if (!isDirty) return; // allow normal navigation if clean
+
+        e.preventDefault();
+        e.returnValue = ""; // required for Chrome/Edge/Firefox
+      });
+
+      // --- DIRTY STATE DETECTION ---
+      fields.forEach((field) => {
+        field.addEventListener("input", () => {
+          checkDirty();
+        });
+      });
+
+      function checkDirty() {
+        for (const field of fields) {
+          if (field.value !== originalValues[field.id]) {
+            setDirty(true);
+            return;
+          }
+        }
+        setDirty(false);
+      }
+
+      function setDirty(state) {
+        if (isDirty === state) return;
+
+        isDirty = state;
+
+        if (isDirty) {
+          status.style.opacity = 1;
+          status.textContent = "Unsaved changes";
+          status.style.color = "orange";
+        } else {
+          status.textContent = "";
+        }
+      }
+
+      // --- SAVE HANDLER ---
+      saveBtn.addEventListener("click", async () => {
+        // COLLECT ALL FIELD VALUES INTO AN OBJECT
+        const payload = {};
+        fields.forEach((f) => (payload[f.name] = f.value));
+
+        console.log("payload", payload);
+
+        saveBtn.disabled = true;
+        status.style.opacity = 1;
+        status.textContent = "Saving...";
+        status.style.color = "black";
+
+        try {
+          const res = await fetch("/articles/saveArticle", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || `Server error`);
+          }
+
+          const data = await res.json();
+          if (!data.success)
+            throw new Error(data.message || "Unknown server error");
+
+          // SUCCESS
+          status.textContent = "Saved successfully!";
+          status.style.color = "green";
+
+          // close the menu-drop-down
+          const dropdownToggle = document.querySelector(
+            '.dropdown-toggle.show, .dropdown-toggle[aria-expanded="true"]'
+          );
+          if (dropdownToggle) {
+            const dropdown = bootstrap.Dropdown.getInstance(dropdownToggle);
+            dropdown.hide();
+          }
+
+          // RESET ORIGINAL VALUES
+          fields.forEach((f) => (originalValues[f.id] = f.value));
+          isDirty = false;
+
+          // FADE OUT SUCCESS MESSAGE
+          setTimeout(() => {
+            status.style.transition = "opacity 1s";
+            status.style.opacity = 0;
+          }, 3000);
+        } catch (err) {
+          status.textContent = "Error: " + err.message;
+          status.style.color = "red";
+          status.style.opacity = 1;
+        } finally {
+          saveBtn.disabled = false;
+        }
+      });
+    </script>
+
+    <% } %>
   </body>
 </html>

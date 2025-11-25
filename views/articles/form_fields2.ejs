@@ -1,15 +1,19 @@
-<!-- hese fields are used in the new articel and edit article forms-->
+<!-- These fields are used in the new article and edit article forms-->
 <!-- Title -->
 <div class="mb-3">
-  <label class="form-label fw-bold">Title</label>
+  <label class="form-label fw-bold">Article Title </label
+  ><span>-(unique slug will be created from this)</span>
   <input
     value="<%=article.title%>"
     type="text"
     name="title"
     class="form-control"
     required
+    id="title"
   />
 </div>
+
+<input type="hidden" id="filePath" name="path" value="<%= path %>" />
 
 <!-- Title Image Name -->
 <div class="mb-4">
@@ -21,13 +25,15 @@
     class="form-control"
     placeholder="Enter the name of an existing image in /cards/"
     required
+    id="image-name"
   />
 </div>
 <!-- Tags -->
 <div class="mb-3">
   <label class="form-label fw-bold">Tag List</label>
   <input value = "<%=article.tag_list%>"" type="text" name="tag_list"
-  class="form-control" placeholder="e.g. javascript, nodejs" required />
+  id="tag-list" class="form-control" placeholder="e.g. javascript, nodejs"
+  required />
   <div class="form-text">Separate tags with commas or spaces.</div>
 </div>
 
@@ -40,6 +46,7 @@
     rows="3"
     maxlength="300"
     required
+    id="description"
   >
 <%=article.description%></textarea
   >

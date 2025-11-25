@@ -101,13 +101,45 @@ let blankArticle = {
   author: "", //name of author
   article_type: "article", // 'articles' | "site page"
   published: "unpublished", // default 'unpublished' | 'pending' | 'published'
-  deleted: false, // true if pending delete
+  deleted: false, // true if flagged for deletion
   title_image: "", // The name of an image in the bucket/cards directory
   // likes: 0, // no of likes default 0
   // views: 0, // no of vieww default 0
 };
 
-// Home page redirected
+/* File->save after editing a new file (save) or an existing one (update) */
+router.post("/saveArticle", express.json(), async (req, res) => {
+  const { title, title_image, tag_list, description, markdown, path } =
+    req.body;
+
+  console.log("title:      ", title);
+  console.log("tag_image:  ", title_image);
+  console.log("tag_list:   ", tag_list);
+  console.log("description:", description);
+  console.log("markdown:   ", markdown);
+  console.log("path:       ", path);
+
+  if (!path) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing path",
+    });
+  }
+
+  const isNewFile = path === "new" || path.startsWith("articles/new");
+
+  if (isNewFile) {
+    console.log("Creating new file...");
+    // create new article logic here
+  } else {
+    console.log("Updating existing file:", path);
+    // update existing article logic here
+  }
+
+  res.json({ success: true });
+});
+
+// Home page redirected from server('/')
 // Security: None needed as its a public home page
 router.get("/home", async (req, res) => {
   try {
@@ -177,7 +209,7 @@ router.post("/search", async (req, res) => {
   }
 });
 
-// Aout page redirected
+// About page redirected
 // Security: None needed as its a public about page
 router.get("/about", async (req, res) => {
   try {
@@ -205,6 +237,11 @@ router.get("/about", async (req, res) => {
   }
 });
 
+/**
+ * Note: The same for is used to edit new or existing articles
+ *       The path variable contains either "/articles/new" or "/articles/edit" to direct any
+ *       reoute specific logic
+ */
 // Reach here with /articles/new
 // Security: Only logged in users who are either admin or members can create new articles
 router.get("/new", (req, res) => {
@@ -226,10 +263,10 @@ router.get("/new", (req, res) => {
     );
     return;
   }
-  res.render("articles/new", {
+  res.render("articles/edit", {
     article: { ...blankArticle },
     res: res.locals,
-  }); // renders "/views/articles/new.ejs" - the new article form
+  }); // renders "/views/articles/edit.ejs"
 });
 
 // Reach here on "new form" submission. POST to /articles/ to save a new article
@@ -381,7 +418,7 @@ router.put("/:id", async (req, res, next) => {
 // Delete an article from the Home page list
 // Security: Only logged in users who are either admin or members can delete articles
 //           TODO: Block members from deleting articles they did not create.
-router.delete("/:id", async (req, res) => {
+router.delete("/delete", async (req, res) => {
   if (
     !(
       req.isAuthenticated() &&
@@ -390,31 +427,37 @@ router.delete("/:id", async (req, res) => {
     )
   ) {
     // If not authenticated or not an admin or member, redirect to unauthorised page
-    res.redirect(
-      "/auth/unauthorised?err_msg=" +
+    return res.status(400).json({
+      unauth: true,
+      success: false,
+      message:
         encodeURIComponent("Inaccessible Route") +
         "&title=" +
         encodeURIComponent("Not Authorised") +
         "&route=" +
-        encodeURIComponent("/")
-    );
-    return;
+        encodeURIComponent("/"),
+    });
   }
 
   try {
-    // let response = await pg_pool.query(
-    //   `DELETE FROM articles WHERE id = '${req.params.id}'`
-    // );
-    res.redirect("/");
-  } catch (error) {
-    res.redirect(
-      "/error/A Delete Error Has Occurred in route %2Farticles%2Fdelete:id"
+    console.log("deleting article:", req.body.slug);
+    // Mark teh article as deleted
+    const saveResult = await pg_pool.query(
+      `UPDATE articles \
+         SET deleted = true
+         WHERE slug ='${req.body.slug}'`
     );
-    return;
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete article",
+      error: err.message,
+    });
   }
 });
 
-// Display articles route, applying various filters
+// Display the list of article cards based on various filters
 // Security: TODO: Review this page and add security where needed
 router.get("/", async (req, res) => {
   let filter = req.query.filter;
@@ -422,14 +465,18 @@ router.get("/", async (req, res) => {
   let query = "";
   let none_msg = "";
   let sqlStr =
-    "SELECT id, title, slug, description,created_at, author, views, likes,title_image from articles where ";
+    "SELECT id, title, slug, tag_list, description,created_at, author, views, likes,title_image from articles where ";
   switch (filter) {
     case "published":
-      query = sqlStr + "published = 'published'";
+      query = sqlStr + "published = 'published' and deleted = false";
       none_msg = "No published articles available";
       break;
+    case "deleted":
+      query = sqlStr + "deleted = true";
+      none_msg = "No deleted articles available";
+      break;
     case "user_id":
-      query = sqlStr + " user_id =" + `'${res.locals.id}'`;
+      query = sqlStr + " user_id =" + `'${res.locals.id}' and deleted = false`;
       none_msg = `No articles available for user "${res.locals.username}"`;
       break;
     case "pages":
@@ -445,7 +492,7 @@ router.get("/", async (req, res) => {
       none_msg = `No pending articles available for user "${res.locals.username}"`;
       break;
     default:
-      query = sqlStr + "published = 'published'";
+      query = sqlStr + "published = 'published' and deleted = false";
       none_msg = "No published articles available";
       break;
   }
@@ -497,15 +544,15 @@ router.get("/", async (req, res) => {
 
 // Display an article in detail by pressing "Read More..""
 // Security: Prevent non admin users from accessing unpublished articles, that dont belong to them
-// TODO: Update this so it replaces S3 image links with signed urls
-// Note: Currentlty retrieveing all articles matching the slug and displayig the first (this is not right)
-router.get("/:slug", async (req, res) => {
+// Note: Currentlty retrieving all articles matching the slug and displayig the first (this is not right)
+router.get("/display/:slug", async (req, res) => {
   console.log("req.params.slug", req.params.slug);
   try {
     const result = await pg_pool.query(
       `SELECT * from articles where slug ='${req.params.slug}'`
     );
     if (result.rows.length === 0) {
+      console.log("document with slug ", req.params.slug, "not found");
       res.redirect("/");
       return;
     }
@@ -585,9 +632,13 @@ router.get("/:slug", async (req, res) => {
   }
 });
 
-// Reach here with /articles/edit/slug
+// Reach here either:
+// -by pressing the "edit" button on a card or
+// -by selecting file->edit menu item that appeard when a file is being displayed
+//
 // Security: Prevent non admin users from editing articles that dont belong to them
 router.get("/edit/:slug", async (req, res) => {
+  console.log("in /edit the path is:", req.path);
   try {
     const result = await pg_pool.query(
       `SELECT * from articles where slug ='${req.params.slug}'`
@@ -616,70 +667,5 @@ router.get("/edit/:slug", async (req, res) => {
 function removeDollarDollar(md, str) {
   return md.replace("$$" + str + "$$", "'" + str + "'");
 }
-/**
- * ************************stuff under developmenet to be deleted ************************
- */
-// This is wrongly named
-router.put("/updateArticle", async (req, res) => {
-  let article = {
-    title: "Article 3a",
-    description: "This is article 3a Description",
-    markdown: "## Article 3a heading",
-    slug: slugify("Article 3a", {
-      lower: true,
-      strict: true,
-    }),
-    user_id: "23cd2fbe-5b1c-4b38-808b-9d9168c2e4be",
-    published: true,
-    tag_list: "abc,def,ghi",
-  };
-  try {
-    let result = await pg_pool.query(
-      `INSERT INTO users (first_name, last_name,email, member_type)\
-            VALUES ('${user.firstName}', '${user.lastName}', '${user.email}','${user.memberType}')`
-    );
-    return result;
-  } catch (error) {
-    console.log("error inserting user", error.message);
-    return "error inserting user";
-  }
-});
-
-// get all articles for a given user-id
-router.get("/getArticlesByUserID", async (req, res) => {
-  try {
-    let response = await pg_pool.query(
-      `Select * from  articles where user_id = '23cd2fbe-5b1c-4b38-808b-9d9168c2e4be'`
-    );
-    res.send(response.rows);
-  } catch (error) {
-    console.log("error getting articles by user_id", error.message);
-    res.send("error getting articles by user_id");
-  }
-});
-
-router.post("/addArticle", async (req, res) => {
-  let article = {
-    title: "Article 3",
-    description: "This is article 3 Description",
-    markdown: "## Article 3 heading",
-    slug: slugify("Article 2", {
-      lower: true,
-      strict: true,
-    }),
-    user_id: "23cd2fbe-5b1c-4b38-808b-9d9168c2e4be",
-    published: false,
-    tag_list: "abc,def,ghi",
-  };
-  try {
-    let result = await addArticle(article);
-    console.log("result", result.command);
-    res.send({
-      article,
-    });
-  } catch (error) {
-    res.send(error);
-  }
-});
 
 export default router;

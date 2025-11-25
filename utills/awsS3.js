@@ -17,6 +17,11 @@ const s3 = new S3Client({
 });
 
 // This is used anywhere S3 images are being displayed.
+// NOTE: getSignedUrl does NOT error is a bad key is supplied
+//       Instead when you try to use it, AWS returns some error HTML.
+//       So It might be wise to first check if the file actually existsing in the bucket
+//       Using   await s3.send(new HeadObjectCommand({ Bucket: "my-bucket", Key: key })
+//       which will throw an error if the key does not exist
 export async function generateSignedUrl(Key) {
   const command = new GetObjectCommand({
     Bucket: process.env.S3_BUCKET_NAME,

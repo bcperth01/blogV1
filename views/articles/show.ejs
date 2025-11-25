@@ -2,51 +2,21 @@
 <html lang="en">
   <head>
     <%- include('../components/head') %>
-    <title>Show</title>
+    <title>Display Article</title>
   </head>
   <body>
     <div class="container">
-      <%- include('../components/header') %>
+      <!-- wrapper to make the navbars sticky-->
+      <div class="sticky-stack sticky-top">
+        <%- include('../components/header') %>
+      </div>
+      <input type="hidden" id="filePath" name="path" value="<%= path %>" />
       <h1 class="mb-1"><%= article.title %></h1>
-      <div class="text-muted mb-2">
-        <%= article.created_at.toLocaleDateString() %>
-      </div>
-      <a href="/articles" class="btn btn-secondary"
-        ><%=`<---- Articles List`%></a
-      >
-      <a href="/articles/edit/<%=article.slug%>" class="btn btn-info">Edit</a>
       <div><%-article.sanitisedHtml%></div>
+      <!-- Delete (Article) Confirmation Modal -->
+      <%- include('../partials/deleteArticleModal') %>
     </div>
 
-    <!-- 🔍 Bootstrap Modal (for zooming images)
-    <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-xl modal-fullscreen-lg-down">
-        <div class="modal-content bg-dark border-0">
-          <button
-            type="button"
-            class="btn-close btn-close-white ms-auto me-2 mt-2"
-            data-bs-dismiss="modal"
-          ></button>
-          <div class="modal-body text-center p-0">
-            <img id="modalImage" class="img-fluid" style="max-height: 90vh" />
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        document.querySelectorAll("img[data-full]").forEach((img) => {
-          console.log("image dataset", img.dataset);
-          img.style.cursor = "zoom-in";
-
-          img.addEventListener("click", () => {
-            document.getElementById("modalImage").src = img.dataset.full;
-            new bootstrap.Modal(document.getElementById("imageModal")).show();
-          });
-        });
-      });
-    </script> -->
     <script src="https://unpkg.com/panzoom@9.4.3/dist/panzoom.min.js"></script>
 
     <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
