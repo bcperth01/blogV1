@@ -45,6 +45,10 @@ app.use(express.urlencoded({ extended: false })); // extracts the body to make i
 app.use(methodOverride("_method")); // the string we use to indicate the desired method (that is not native to Form submit)
 app.use(express.static("public")); // To enable public assets to be found by the browser,see https://expressjs.com/en/starter/static-files.html
 app.use(errorHandler); // returns 500 status and error message
+app.use((req, res, next) => {
+  res.locals.title = "BCBlog"; // default
+  next();
+});
 
 // Activate session middleware using a postgres store
 app.use(

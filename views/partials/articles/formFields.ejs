@@ -1,0 +1,186 @@
+<!-- These fields are used in the new article and edit article forms-->
+<!-- Title -->
+<div class="mb-3">
+  <label class="form-label fw-bold">Article Title </label
+  ><span>-(unique slug will be created from this)</span>
+  <input
+    value="<%=article.title%>"
+    type="text"
+    name="title"
+    class="form-control"
+    required
+    id="title"
+  />
+</div>
+
+<input type="hidden" id="filePath" name="path" value="<%= path %>" />
+
+<!-- Title Image Name -->
+<div class="mb-4">
+  <label class="form-label fw-bold">Title Image Name</label>
+  <input
+    value="<%=article.title_image%>"
+    type="text"
+    name="title_image"
+    class="form-control"
+    placeholder="Enter the name of an existing image in /cards/"
+    required
+    id="image-name"
+  />
+</div>
+<!-- Tags -->
+<div class="mb-3">
+  <label class="form-label fw-bold">Tag List</label>
+  <input value = "<%=article.tag_list%>"" type="text" name="tag_list"
+  id="tag-list" class="form-control" placeholder="e.g. javascript, nodejs"
+  required />
+  <div class="form-text">Separate tags with commas or spaces.</div>
+</div>
+
+<!-- Description -->
+<div class="mb-3">
+  <label class="form-label fw-bold">Description</label>
+  <textarea
+    name="description"
+    class="form-control"
+    rows="3"
+    maxlength="300"
+    required
+    id="description"
+  >
+<%=article.description%></textarea
+  >
+</div>
+
+<!-- Markdown -->
+<div class="mb-4">
+  <label class="form-label fw-bold">Article Body (markdown)</label>
+  <textarea
+    id="markdownEditor"
+    class="form-control auto-resize"
+    rows="3"
+    name="markdown"
+  >
+<%=article.markdown%>
+</textarea
+  >
+</div>
+
+<!-- CONTEXT MENU -->
+<ul
+  id="customMenu"
+  class="custom-menu list-group shadow"
+  role="menu"
+  aria-hidden="true"
+>
+  <!-- SUBMENU GROUP: Headings -->
+  <li class="list-group-item has-submenu" role="presentation">
+    Headings →
+    <ul class="submenu" role="menu" aria-label="Headings">
+      <li class="submenu-item" data-action="h1" role="menuitem" tabindex="-1">
+        Heading 1
+      </li>
+      <li class="submenu-item" data-action="h2" role="menuitem" tabindex="-1">
+        Heading 2
+      </li>
+    </ul>
+  </li>
+
+  <!-- SUBMENU: Formatting -->
+  <li class="list-group-item has-submenu" role="presentation">
+    Formatting →
+    <ul class="submenu" role="menu" aria-label="Formatting">
+      <li class="submenu-item" data-action="bold" role="menuitem" tabindex="-1">
+        Bold
+      </li>
+      <li
+        class="submenu-item"
+        data-action="italic"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Italic
+      </li>
+      <li
+        class="submenu-item"
+        data-action="inlineCode"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Inline Code
+      </li>
+      <li
+        class="submenu-item"
+        data-action="codeBlock"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Code Block
+      </li>
+    </ul>
+  </li>
+
+  <!-- SUBMENU: Lists -->
+  <li class="list-group-item has-submenu" role="presentation">
+    Lists →
+    <ul class="submenu" role="menu" aria-label="Lists">
+      <li
+        class="submenu-item"
+        data-action="ulist"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Unordered List
+      </li>
+      <li
+        class="submenu-item"
+        data-action="olist"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Ordered List
+      </li>
+    </ul>
+  </li>
+
+  <!-- SUBMENU: Snippets -->
+  <li class="list-group-item has-submenu" role="presentation">
+    Snippets →
+    <ul class="submenu" role="menu" aria-label="Snippets">
+      <li
+        class="submenu-item"
+        data-action="insertTable"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Insert Table
+      </li>
+      <li
+        class="submenu-item"
+        data-action="insertImage"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Insert Image
+      </li>
+      <li
+        class="submenu-item"
+        data-action="insertLink"
+        role="menuitem"
+        tabindex="-1"
+      >
+        Insert Link
+      </li>
+    </ul>
+  </li>
+
+  <!-- CANCEL -->
+  <li
+    class="list-group-item text-danger"
+    data-action="cancel"
+    role="menuitem"
+    tabindex="-1"
+  >
+    Cancel
+  </li>
+</ul>

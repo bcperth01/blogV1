@@ -1,0 +1,50 @@
+<!-- General Help Modal: Ths should be available unconditionally on every route  -->
+<!-- This is triggered from the main navbar Help->Site Help menu item (Bootstrap provides the code so there is no script)  -->
+<!-- TODO: Edit the text!!   -->
+<div class="modal fade" id="SiteHelpModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Help with The Site</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+
+      <div class="modal-body">
+        <p>
+          When you upload an image, its best to upload the highest res you have.
+          Three versions will be automatically produced and saved; thumbnails,
+          cards and high res.
+        </p>
+
+        <ul>
+          <li>
+            All images are stored in an AWS S3 bucket and there is no public
+            access.
+          </li>
+          <li>Images are accessed by the site using short life signed URLs.</li>
+          <li>Click on a thumbnail to see the high res version.</li>
+          <li>Rotating left or right by 90Deg will rotate all versions.</li>
+          <li>Deleting removes all versions.</li>
+          <li>
+            When uploading, the image name you give must not already exist.
+          </li>
+          <li>Images are converted to jpg when they are uploaded.</li>
+          <li>
+            When you Select an image its name goes into the clipboard, for you
+            to embed in a document
+          </li>
+        </ul>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

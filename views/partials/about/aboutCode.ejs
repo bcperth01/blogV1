@@ -1,0 +1,16 @@
+<!-- The "About" page is implemented as an articles with slug "about-page" -->
+<% if (article!="empty") { %>
+<div class="row justify-content-center pt-5 border border-4">
+  <div class="col-12 col-sm-10 col-md-8"><%-article.sanitisedHtml%></div>
+</div>
+<% } else { %>
+<div class="row justify-content-center pt-5 border border-4">
+  <div class="col-12 col-sm-10 col-md-8">No About Article Available</div>
+  <div class="col-12 col-sm-10 col-md-8">
+    Make an article with slug "about-page"
+  </div>
+  <div class="col-12 col-sm-10 col-md-8">
+    Then it will display instead of this
+  </div>
+</div>
+<% } %>

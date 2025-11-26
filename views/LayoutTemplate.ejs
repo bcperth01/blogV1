@@ -1,3 +1,7 @@
+<!--COPY AND PASTE THIS WHEN CREATEING A NEW ROUTE-->
+<!--COPY IN ADDITIONAL SEACHBAR PARTIAL IF NEEDED-->
+<!--COPY IN ROUTE PARTIAL -->
+<!--EXMAPLE SHOWN FOT THE listImages route -->
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -13,9 +17,10 @@
         <%- include('../components/header') %>
         <!-- Put additonal search bars (that need to be sticky) here for the route here-->
         <!-- COPY IN WHERE NEEDED ...The searchbar for images-->
+        <%- include('../partials/images/imagesSearchBar') %>
       </div>
       <!-- ADD IN route specific HTML, modals and scripts here -->
-      <%- include('../partials/about/homeCode') %>
+      <%- include('../partials/images/listImagesCode') %>
     </div>
     <!-- This Help modal is available to all routes-->
     <%- include('../partials/siteHelpModal') %>

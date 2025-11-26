@@ -14,10 +14,12 @@
         <div class="col leftside">
           <h1 class="mb-4">Edit Article Form...</h1>
           <div id="status" style="margin-top: 10px"></div>
-          <form id="editForm"><%- include('form_fields2') %></form>
+          <form id="editForm">
+            <%- include('../partials/articles/formFields') %>
+          </form>
         </div>
         <div class="col rightside">
-          <h2 class="mb-4">Preview of Article Body (images shown)</h2>
+          <h2 class="mb-4">Preview of Article Body - with thumbnails</h2>
           <div class="border"><%-article.sanitisedHtml%></div>
         </div>
       </div>

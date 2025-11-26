@@ -276,6 +276,7 @@ router.get("/listImages2", async (req, res) => {
           img.title.toLowerCase().includes(filter)
       )
     : images;
+  res.locals.title = "List Images";
   res.render("manage/listImages", {
     res: res.locals,
     images: filtered,

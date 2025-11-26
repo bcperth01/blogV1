@@ -121,6 +121,38 @@
             </li>
           </ul>
         </li>
+       <li class="nav-item dropdown">
+          <a
+            class="nav-link dropdown-toggle"
+            data-bs-auto-close="outside"
+            href="#"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            Help
+          </a>
+          <ul class="dropdown-menu">
+          <% if (path.startsWith("/manageImages")) { %>
+            <li>
+              <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#ImagesHelpModal">Managing Images</a>
+            </li>
+          <% } %>
+          <% if (path.startsWith("/articles/edit/")) { %>
+            <li>
+              <a class="dropdown-item" href="/#">Editing Articles</a>
+            </li>
+          <% } %>
+          <% if (path.startsWith("/articles")) { %>
+            <li>
+              <a class="dropdown-item" href="/#">About Articles</a>
+            </li>
+          <% } %>
+            <li>
+              <a class="dropdown-item" href="/#"" data-bs-toggle="modal" data-bs-target="#SiteHelpModal">Site Help</a>
+            </li>
+          </ul>
+        </li>
         <% } %> <% if (res.loggedIn && res.member_type !== "admin") { %>
         <li class="nav-item">
           <a class="nav-link" aria-current="page" href="/auth/editProfile"
