@@ -14,10 +14,13 @@ import methodOverride from "method-override";
 import dotenv from "dotenv";
 import errorHandler from "./middleware/errorHandler.js";
 import pg_pool from "./pgQueries/connectPool.js"; // connection to PostGres
-
+import markdownit from "markdown-it";
 // For authentication using passport.js
 import passport from "passport";
 import session from "express-session";
+
+import createDomPurify from "dompurify";
+import { JSDOM } from "jsdom";
 
 // Create a postgres session store
 import genFunc from "connect-pg-simple"; // a postress session store
@@ -28,8 +31,66 @@ const sessionStore = new pgSessionStore({
   pruneSessionInterval: 90, // deletes dormant sessions after 90 secs
   // Insert connect-pg-simple options here
 });
-
+const dompurify = createDomPurify(new JSDOM().window);
 dotenv.config(); // Loads environment variables from .env file into process.env
+
+// Initialise Markdown-it with the full options list (defaults)
+const md = markdownit({
+  // Enable HTML tags in source
+  html: false,
+
+  // Use '/' to close single tags (<br />).
+  // This is only for full CommonMark compatibility.
+  xhtmlOut: false,
+
+  // Convert '\n' in paragraphs into <br>
+  breaks: false,
+
+  // CSS language prefix for fenced blocks. Can be
+  // useful for external highlighters.
+  langPrefix: "language-",
+
+  // Autoconvert URL-like text to links
+  linkify: false,
+
+  // Enable some language-neutral replacement + quotes beautification
+  // For the full list of replacements, see https://github.com/markdown-it/markdown-it/blob/master/lib/rules_core/replacements.mjs
+  typographer: false,
+
+  // Double + single quotes replacement pairs, when typographer enabled,
+  // and smartquotes on. Could be either a String or an Array.
+  //
+  // For example, you can use '«»„“' for Russian, '„“‚‘' for German,
+  // and ['«\xA0', '\xA0»', '‹\xA0', '\xA0›'] for French (including nbsp).
+  quotes: "“”‘’",
+
+  // Highlighter function. Should return escaped HTML,
+  // or '' if the source string is not changed and should be escaped externally.
+  // If result starts with <pre... internal wrapper is skipped.
+  // Note: I manually wrapped with '<pre><code class="hljs">' to inject the hljs class (sets the backgound and color)
+  //       Without this, "markdowm-it" wraps <pre><code> without the class.
+  //       The official way to inject class="hljs" is not documented as far as I can see
+  highlight: function (str, lang) {
+    if (lang && hljs.getLanguage(lang)) {
+      try {
+        return (
+          '<pre><code class="hljs">' +
+          hljs.highlight(str, { language: lang }).value +
+          "</code></pre>"
+        );
+      } catch (err) {
+        res.redirect(
+          "/error/A Error Has Occurred in function %2Farticles%2Fhighlight()"
+        );
+        return;
+      }
+    }
+    console.log("No Language set");
+    return (
+      '<pre><code class="hljs">' + md.utils.escapeHtml(str) + "</code></pre>"
+    );
+  },
+});
 
 // console.log(process.env);
 
@@ -85,20 +146,63 @@ app.use("/manageImages", manageImagesRouter);
 // Home Page redirected - because its implemented as an article
 // Security: None needed as its a public home page
 app.get("/", async (req, res, next) => {
-  console.log("req.user in route /", req.user);
+  res.redirect("/home");
+});
 
-  // USE NEXT 2 LINES TO CREATE THE TABLES FOR A NEW INSTALLATION
-  // await createTables();
-  // res.send("hello World")
-
-  // NOTE: THIS CAUSES AN ENDLESS LOOP OF REDIRECTS IF THERE ARE NO ARTICLES IN THE DATABASE
-  res.redirect("/articles/home"); // Comment this out if creating new tables for a new installation
+app.get("/home", async (req, res) => {
+  try {
+    const result = await pg_pool.query(
+      "SELECT markdown from articles where slug='home-page'"
+    );
+    res.locals.title = "Home";
+    if (result.rows.length === 0) {
+      res.render("about/home", { article: "empty", res: res.locals });
+    } else {
+      let article = result.rows[0];
+      article.sanitisedHtml = dompurify.sanitize(
+        md.render(article.markdown.trim())
+      );
+      // article.created = article.created_at.toLocalString("en-UK");
+      res.render("about/home", {
+        article,
+        res: res.locals,
+      });
+    }
+  } catch (err) {
+    res.redirect(
+      "/error/A Search Error Has Occurred in route %2Farticles%2Fhome"
+    );
+    return;
+  }
 });
 
 // About page redirected - because its implemented as an article
 // Security: None needed as its a public about page
 app.get("/about", async (req, res) => {
-  res.redirect("/articles/about");
+  try {
+    const result = await pg_pool.query(
+      "SELECT markdown from articles where slug='about-page'"
+    );
+    res.locals.title = "About";
+    if (result.rows.length === 0) {
+      res.render("about/about", { article: "empty", res: res.locals });
+    } else {
+      let article = result.rows[0];
+      article.sanitisedHtml = dompurify.sanitize(
+        md.render(article.markdown.trim())
+      );
+      res.render("about/about", {
+        article,
+        res: res.locals,
+      });
+    }
+  } catch (err) {
+    console.log(err);
+    res.redirect(
+      "/error/A Search Error Has Occurred in route %2Farticles%2Fabout"
+    );
+    return;
+  }
 });
 
 // Error page

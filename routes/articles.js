@@ -138,63 +138,6 @@ router.post("/saveArticle", express.json(), async (req, res) => {
   res.json({ success: true });
 });
 
-// Home page redirected from server('/')
-// Security: None needed as its a public home page
-router.get("/home", async (req, res) => {
-  try {
-    const result = await pg_pool.query(
-      "SELECT markdown from articles where slug='home-page'"
-    );
-    res.locals.title = "Home";
-    if (result.rows.length === 0) {
-      res.render("about/home", { article: "empty", res: res.locals });
-    } else {
-      let article = result.rows[0];
-      article.sanitisedHtml = dompurify.sanitize(
-        md.render(article.markdown.trim())
-      );
-      // article.created = article.created_at.toLocalString("en-UK");
-      res.render("about/home", {
-        article,
-        res: res.locals,
-      });
-    }
-  } catch (err) {
-    res.redirect(
-      "/error/A Search Error Has Occurred in route %2Farticles%2Fhome"
-    );
-    return;
-  }
-});
-
-// About page redirected
-// Security: None needed as its a public about page
-router.get("/about", async (req, res) => {
-  try {
-    const result = await pg_pool.query(
-      "SELECT markdown from articles where slug='about-page'"
-    );
-    res.locals.title = "About";
-    if (result.rows.length === 0) {
-      res.render("about/about", { article: "empty", res: res.locals });
-    } else {
-      let article = result.rows[0];
-      article.sanitisedHtml = dompurify.sanitize(
-        md.render(article.markdown.trim())
-      );
-      res.render("about/about", {
-        article,
-        res: res.locals,
-      });
-    }
-  } catch (err) {
-    res.redirect(
-      "/error/A Search Error Has Occurred in route %2Farticles%2Fabout"
-    );
-    return;
-  }
-});
-
 // Route for full text search for matcheing articles
 // Security: Everyone can get a list of published articles
 // Note: A full text searchable document is created by combining the fiels "markdown", "author", "slug" and "title"

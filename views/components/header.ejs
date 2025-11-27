@@ -19,7 +19,7 @@
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <li class="nav-item">
-          <a class="nav-link active" aria-current="page" href="/articles/home"
+          <a class="nav-link active" aria-current="page" href="/home"
             >Home</a
           >
         </li>
@@ -34,8 +34,40 @@
             >Articles</a
           >
         </li>
-        <!-- Only show this if we are on the routes shown -->
-        <% if (path.startsWith("/articles")) { %>
+               <li class="nav-item dropdown">
+          <a
+            class="nav-link dropdown-toggle"
+            data-bs-auto-close="outside"
+            href="#"
+            role="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+          >
+            Help
+          </a>
+          <ul class="dropdown-menu">
+          <% if (path.startsWith("/manageImages")) { %>
+            <li>
+              <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#ImagesHelpModal">Managing Images</a>
+            </li>
+          <% } %>
+          <% if (path.startsWith("/articles/edit/")) { %>
+            <li>
+              <a class="dropdown-item" href="/#">Editing Articles</a>
+            </li>
+          <% } %>
+          <% if (path.startsWith("/articles")) { %>
+            <li>
+              <a class="dropdown-item" href="/#">About Articles</a>
+            </li>
+          <% } %>
+            <li>
+              <a class="dropdown-item" href="/#"" data-bs-toggle="modal" data-bs-target="#SiteHelpModal">Site Help</a>
+            </li>
+          </ul>
+        </li>
+        <!-- Only show the File menu when a user is logged in and entitled to edit files -->
+        <% if ((path.startsWith("/articles/") || path==="/articles"|| path === "/articles/") && res.loggedIn && (res.member_type === "admin" || res.member_type === "member"))  { %>
         <li class="nav-item dropdown">
           <a
             class="nav-link dropdown-toggle"
@@ -48,30 +80,37 @@
             File
           </a>
           <ul class="dropdown-menu">
-            <% if (path.startsWith("/articles/display/")) { %>
+          <% if (path.startsWith("/articles/display/") ) { %>
                 <li>
                   <a class="dropdown-item" href="/articles/edit/<%= path.replace("/articles/display/", "") %>">Edit</a>
                </li>
-               <li>
-                  <a class="dropdown-item text-danger" href="#" id="menuDelete" data-path="<%= path %>">
-                      Delete
-                  </a>
+          <% } %>
+          <% if (path==="/articles"|| path === "/articles/"){ %>
+              <li>
+                <a class="dropdown-item" href="/articles/new">New</a>
                </li>
-            <% } %>
-            <li>
-              <a class="dropdown-item" href="/articles/new">New Article</a>
-            </li>
-            <li>
-              <a class="dropdown-item" href="#" id="menuSave">Save</a>
-            </li>
-            <li>
-              <a class="dropdown-item" href="/manageImages/listImages2"
+          <% } %>
+          <% if (path.startsWith("/articles/edit/")) { %>
+              <li>
+                <a class="dropdown-item" href="#" id="menuSave">Save</a>
+              </li>
+              <li>
+              <a class="dropdown-item" href="/articles/?filter=user_id"
                 >Exit Without Saving</a
               >
-            </li>
+              </li>
+            <% } %>
+            <% if (path.startsWith("/articles/display/") || path.startsWith("/articles/edit/")) { %>       
+              <li>
+                <a class="dropdown-item text-danger" href="#" id="menuDelete" data-path="<%= path %>">
+                   Delete
+                </a>
+               </li>
+          <% } %>
           </ul>
         </li>
-        <% } %> <% if (res.loggedIn && res.member_type === "admin") { %>
+        <% } %> 
+        <% if (res.loggedIn && res.member_type === "admin") { %>
         <li class="nav-item dropdown">
           <a
             class="nav-link dropdown-toggle"
@@ -105,7 +144,7 @@
             <li>
               <a class="dropdown-item" href="/admin/backups">Manage Backups</a>
             </li>
-            <li><hr class="dropdown-divider" /></li>
+            <!-- <li><hr class="dropdown-divider" /></li>
             <li class="nav-item dropend">
               <a
                 class="dropdown-item dropdown-toggle"
@@ -118,41 +157,10 @@
                 <li><a href="#" class="dropdown-item">Item 2</a></li>
                 <li><a href="#" class="dropdown-item">Item 3</a></li>
               </ul>
-            </li>
+            </li> -->
           </ul>
         </li>
-       <li class="nav-item dropdown">
-          <a
-            class="nav-link dropdown-toggle"
-            data-bs-auto-close="outside"
-            href="#"
-            role="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
-          >
-            Help
-          </a>
-          <ul class="dropdown-menu">
-          <% if (path.startsWith("/manageImages")) { %>
-            <li>
-              <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#ImagesHelpModal">Managing Images</a>
-            </li>
-          <% } %>
-          <% if (path.startsWith("/articles/edit/")) { %>
-            <li>
-              <a class="dropdown-item" href="/#">Editing Articles</a>
-            </li>
-          <% } %>
-          <% if (path.startsWith("/articles")) { %>
-            <li>
-              <a class="dropdown-item" href="/#">About Articles</a>
-            </li>
-          <% } %>
-            <li>
-              <a class="dropdown-item" href="/#"" data-bs-toggle="modal" data-bs-target="#SiteHelpModal">Site Help</a>
-            </li>
-          </ul>
-        </li>
+
         <% } %> <% if (res.loggedIn && res.member_type !== "admin") { %>
         <li class="nav-item">
           <a class="nav-link" aria-current="page" href="/auth/editProfile"

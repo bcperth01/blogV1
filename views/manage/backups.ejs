@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head><%- include('../components/head') %> 
-    <title>Manage Backups</title>
+  <head>
+    <%- include('../components/head') %>
+    <!-- The title is supplied by the express route that sets res.locals.title = "route title"-->
+    <title><%= title || "BC Blog" %></title>
   </head>
   <body>
+    <div class="container">
       <!-- wrapper to make the navbars sticky-->
-      <div class="container sticky-stack sticky-top">
+      <div class="sticky-stack sticky-top">
+        <!-- The header is the navbar -->
         <%- include('../components/header') %>
+        <!-- Put additonal search bars (that need to be sticky) here for the route here-->
       </div>
-
-      <!-- container for users Table -->
-      <div class="container">
-       <h3>Management of Backups Not Yet Implemented...</h3>
-      </div>
+      <!-- ADD IN route specific HTML, modals and scripts here -->
+      <%- include('../partials/admin/backupsCode') %>
     </div>
+    <!-- This Help modal is available to all routes-->
+    <%- include('../partials/siteHelpModal') %>
   </body>
 </html>
