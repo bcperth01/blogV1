@@ -12,7 +12,6 @@ import dayjs from "dayjs";
 // see documentation for dompurify
 import createDomPurify from "dompurify";
 import { JSDOM } from "jsdom";
-import { addArticle } from "../pgQueries/queries.js";
 import pg_pool from "../pgQueries/connectPool.js";
 import {
   replaceMarkdownImages,
@@ -265,6 +264,7 @@ router.get("/new", (req, res) => {
   }
   res.render("articles/edit", {
     article: { ...blankArticle },
+    heading: "New Article",
     res: res.locals,
   }); // renders "/views/articles/edit.ejs"
 });
@@ -405,7 +405,11 @@ router.put("/:id", async (req, res, next) => {
          WHERE id ='${req.params.id}'`
     );
 
-    res.render("articles/edit", { article: editedArticle, res: res.locals });
+    res.render("articles/edit", {
+      article: editedArticle,
+      heading: "Edit New Article",
+      res: res.locals,
+    });
   } catch (err) {
     console.log("error", err);
     res.redirect(
@@ -528,7 +532,7 @@ router.get("/", async (req, res) => {
       })
     );
 
-    res.render("articles/index", {
+    res.render("articles/listCards", {
       articles,
       res: res.locals,
       none_msg,
@@ -654,7 +658,11 @@ router.get("/edit/:slug", async (req, res) => {
       md.render(markdownWithImages, { res: res.locals })
     );
 
-    res.render("articles/edit", { article, res: res.locals });
+    res.render("articles/edit", {
+      heading: "Edit Article",
+      article,
+      res: res.locals,
+    });
   } catch (err) {
     res.redirect(
       "/error/A Search Error Has Occurred in route %2Farticles%2Fedit%2F:slug"

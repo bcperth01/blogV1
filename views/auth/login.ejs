@@ -1,122 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head><%- include('../components/head') %> 
-    <title>Login</title>
+  <head>
+    <%- include('../components/head') %>
+    <!-- The title is supplied by the express route that sets res.locals.title = "route title"-->
+    <title><%= title || "BC Blog" %></title>
   </head>
   <body>
-    <!-- container for header -->
-    <div class="container"><%- include('../components/header') %></div>
-    <!-- container for login page -->
-    <div class="container pt-5 mt-5">
-      <!-- One outer row - whose contents will be centered-->
-      <div class="row justify-content-center">
-        <!-- Inner fixed width row with border -->
-        <div
-          style="width: 450px"
-          class="border border-primary border-3 rounded-5 bg-light m1"
-        >
-          <!-- inner div to contain the form -->
-          <div
-            style="
-              padding-top: 30px;
-              padding-bottom: 30px;
-              padding-right: 40px;
-              padding-left: 30px;
-            "
-          >
-            <div class="row mb-3">
-              <div style="width: 45px"></div>
-              <h2 class="col text-center">Login</h2>
-            </div>
-            <!-- This is the form -->
-            <form class="flex" action="/auth/login/password" method="post" autocomplete="off">
-              <!-- Username (for login) -->
-              <!-- NOTE: If a value is not provided the browser auto-fills the last loggin user  -->
-              <!--    This is a bit disconcerting for security reason - so I use a value of "-"  -->
-              <!--    Also cant turn autocomplete off so browsers offers all previous logins  -->
-              <!--    This is very bad on a computer thats shared....  -->
-              <!--    Will need to find a workaround to block this behaviour  --> 
-              <section class="row mb-2">
-                <label style="width: 45px" for="username"
-                  ><svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    fill="currentColor"
-                    class="bi bi-person-workspace"
-                    viewBox="0 0 16 16"
-                  >
-                    <path
-                      d="M4 16s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-5.95a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5"
-                    />
-                    <path
-                      d="M2 1a2 2 0 0 0-2 2v9.5A1.5 1.5 0 0 0 1.5 14h.653a5.4 5.4 0 0 1 1.066-2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v9h-2.219c.554.654.89 1.373 1.066 2h.653a1.5 1.5 0 0 0 1.5-1.5V3a2 2 0 0 0-2-2z"
-                    />
-                  </svg>
-                </label>
-                <input
-                  class="col"
-                  id="username"
-                  name="username"
-                  type="text"
-                  placeholder="Username *"
-                  value ="-"
-                  required
-                />
-              </section>
-              <!-- Password -->
-              <section class="row mb-2">
-                <label style="width: 45px" for="password"
-                  ><svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    fill="currentColor"
-                    class="bi bi-lock"
-                    viewBox="0 0 16 16"
-                  >
-                    <path
-                      d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2M5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1"
-                    />
-                  </svg>
-                </label>
-                <input
-                  class="col"
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="Password *"
-                  value ="-"
-                  required
-                />
-              </section>
-              <% if (err_msg !== "") { %>
-              <section class="row">
-                <div style="width: 45px"></div>
-                <div class="col text-danger">
-                  <small><%= err_msg %></small>
-                </div>
-              </section>
-              <% } %>
-              <section class="d-flex flex-row gap-2 mb-1 justify-content-between">
-                <div style="width: 45px"></div>
-                <button class="btn btn btn-primary flex-fill" type="submit">login</button>
-                <button class="btn btn-outline-primary flex-fill" type="submit" formnovalidate formaction = "/auth/cancel" formmethod = "get">
-                  Cancel
-                </button>
-              </section>
-              <section class="row">
-                <div style="width: 45px"></div>
-                <div class="col">
-                  Not registered yet?<span class="px-3"
-                    ><a href="/auth/signup">Sign Up</a></span
-                  >
-                </div>
-              </section>
-            </form>
-          </div>
-        </div>
+    <div class="container">
+      <!-- wrapper to make the navbars sticky-->
+      <div class="sticky-stack sticky-top">
+        <!-- The header is the navbar -->
+        <%- include('../components/header') %>
+        <!-- Put additonal search bars (that need to be sticky) here for the route here-->
+        <!-- COPY IN WHERE NEEDED ...The searchbar for images-->
       </div>
+      <!-- ADD IN route specific HTML, modals and scripts here -->
+      <%- include('../partials/auth/loginCode') %>
     </div>
+    <!-- This Help modal is available to all routes-->
+    <%- include('../partials/siteHelpModal') %>
   </body>
 </html>

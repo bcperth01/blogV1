@@ -1,49 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head><%- include('../components/head') %> 
-    <title>unauthorised</title>
+  <head>
+    <%- include('../components/head') %>
+    <!-- The title is supplied by the express route that sets res.locals.title = "route title"-->
+    <title><%= title || "BC Blog" %></title>
   </head>
   <body>
-    <!-- container for header -->
-    <div class="container"><%- include('../components/header') %></div>
-    <!-- container for unauthorised page -->
-    <div class="container pt-5 mt-5">
-      <!-- One outer row - whose contents will be centered-->
-      <div class="row justify-content-center">
-        <!-- Inner fixed width row with border -->
-        <div
-          style="width: 450px"
-          class="border border-primary border-3 rounded-5 bg-light m1"
-        >
-          <!-- inner div to contain the form -->
-          <div
-            style="
-              padding-top: 30px;
-              padding-bottom: 30px;
-              padding-right: 40px;
-              padding-left: 30px;
-            "
-          >
-            <div class="row mb-3">
-              <div style="width: 45px"></div>
-              <h2 class="col text-center"><%= title %></h2>
-            </div>
-            <!-- This is the form -->
-            <form class="flex" action="<%= route %>" method="get">
-              <section class="row">
-                <div style="width: 45px"></div>
-                <div class="col text-danger">
-                  <small><%= err_msg %></small>
-                </div>
-              </section>
-              <section class="row mb-2 pt-1">
-                <div style="width: 45px"></div>
-                <button class="col btn btn-primary" type="submit">Home</button>
-              </section>
-            </form>
-          </div>
-        </div>
+    <div class="container">
+      <!-- wrapper to make the navbars sticky-->
+      <div class="sticky-stack sticky-top">
+        <!-- The header is the navbar -->
+        <%- include('../components/header') %>
+        <!-- Put additonal search bars (that need to be sticky) here for the route here-->
+        <!-- COPY IN WHERE NEEDED ...The searchbar for images-->
       </div>
+      <!-- ADD IN route specific HTML, modals and scripts here -->
+      <%- include('../partials/auth/unauthorisedCode') %>
     </div>
+    <!-- This Help modal is available to all routes-->
+    <%- include('../partials/siteHelpModal') %>
   </body>
 </html>
