@@ -2,7 +2,9 @@
 <!-- Title -->
 <div class="mb-3">
   <label class="form-label fw-bold">Article Title </label
-  ><span>-(unique slug will be created from this)</span>
+  ><span style="margin-left: 10px"
+    >-a unique slug will be derived from title</span
+  >
   <input
     value="<%=article.title%>"
     type="text"
@@ -14,6 +16,7 @@
 </div>
 
 <input type="hidden" id="filePath" name="path" value="<%= path %>" />
+<input type="hidden" id="docID" name="id" value="<%= article.id || "" %>" />
 
 <!-- Title Image Name -->
 <div class="mb-4">

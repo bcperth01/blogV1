@@ -29,29 +29,6 @@
   </div>
 </div>
 
-<!-- Toast Container to confirm deletion-->
-<div id="toastWrapper" class="p-2" style="width: 100%">
-  <div
-    id="deleteToast"
-    class="toast text-bg-success w-100"
-    role="alert"
-    aria-live="assertive"
-    aria-atomic="true"
-    data-bs-delay="2500"
-  >
-    <div class="d-flex">
-      <div class="toast-body" id="deleteToastBody">
-        File deleted successfully.
-      </div>
-      <button
-        type="button"
-        class="btn-close btn-close-white me-2 m-auto"
-        data-bs-dismiss="toast"
-      ></button>
-    </div>
-  </div>
-</div>
-
 <script>
   document.addEventListener("DOMContentLoaded", () => {
     let partsArray = [];
@@ -96,6 +73,7 @@
     document
       .getElementById("confirmDeleteBtn")
       .addEventListener("click", async () => {
+        console.log("executing delete", article_slug);
         const response = await fetch("/articles/delete", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
@@ -103,6 +81,7 @@
         });
 
         const result = await response.json();
+        console.log("response", result);
 
         // close the modal before redirect
         modal.hide();
@@ -118,12 +97,10 @@
             "/error/A Delete Error Has Occurred in route %2Farticles%2Fdelete";
         } else {
           // Show toast
-          const toastEl = document.getElementById("deleteToast");
-          const toast = new bootstrap.Toast(toastEl);
-          toast.show();
+          showToast(`File ${article_slug} marked as deleted`);
           setTimeout(() => {
-            window.location.href = `/articles/?filter=user_id`;
-          }, 1500);
+            window.location.href = `/articles/cards?filter=user_id`;
+          }, 2000);
         }
       });
   });

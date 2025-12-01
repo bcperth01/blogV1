@@ -6,14 +6,16 @@
   <div class="d-flex justify-content-start gap-2">
     <div>
       <% if(res.loggedIn) {%>
-      <a href="/articles?filter=published" class="btn btn-secondary btn-sm"
+      <a
+        href="/articles/cards?filter=published"
+        class="btn btn-secondary btn-sm"
         >Published</a
       >
       <% } %>
     </div>
     <div>
       <% if(res.loggedIn) {%>
-      <a href="/articles/?filter=user_id" class="btn btn-secondary btn-sm"
+      <a href="/articles/cards?filter=user_id" class="btn btn-secondary btn-sm"
         >Unpublished</a
       >
       <% } %>
@@ -23,7 +25,7 @@
   <div class="d-flex justify-content-start gap-2">
     <div>
       <% if(res.loggedIn && res.member_type === "admin") {%>
-      <a href="/articles/?filter=pending" class="btn btn-secondary btn-sm"
+      <a href="/articles/cards?filter=pending" class="btn btn-secondary btn-sm"
         >Pending</a
       >
       <% } %>

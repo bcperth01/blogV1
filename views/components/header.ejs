@@ -30,7 +30,7 @@
           <a
             class="nav-link"
             aria-current="page"
-            href="/articles?filter=published"
+            href="/articles/cards?filter=published"
             >Articles</a
           >
         </li>
@@ -85,22 +85,22 @@
                   <a class="dropdown-item" href="/articles/edit/<%= path.replace("/articles/display/", "") %>">Edit</a>
                </li>
           <% } %>
-          <% if (path==="/articles"|| path === "/articles/"){ %>
+          <% if (path==="/articles/cards"|| path === "/articles/"){ %>
               <li>
                 <a class="dropdown-item" href="/articles/new">New</a>
                </li>
           <% } %>
-          <% if (path.startsWith("/articles/edit/")) { %>
+          <% if (path.startsWith("/articles/edit") || path === "/articles/new") { %>
               <li>
                 <a class="dropdown-item" href="#" id="menuSave">Save</a>
               </li>
               <li>
-              <a class="dropdown-item" href="/articles/?filter=user_id"
+              <a class="dropdown-item" href="/articles/cards/?filter=user_id"
                 >Exit Without Saving</a
               >
               </li>
             <% } %>
-            <% if (path.startsWith("/articles/display/") || path.startsWith("/articles/edit/")) { %>       
+            <% if (path.startsWith("/articles/edit") || path === "/articles/new" || path === "/articles/display/") { %>       
               <li>
                 <a class="dropdown-item text-danger" href="#" id="menuDelete" data-path="<%= path %>">
                    Delete
@@ -175,7 +175,7 @@
         class="d-flex"
         role="search"
         action="/articles/search"
-        method="post"
+        method="get"
       >
         <input
           class="form-control me-2"

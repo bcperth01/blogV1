@@ -10,6 +10,12 @@
     <title><%= title || "BC Blog" %></title>
   </head>
   <body>
+    <div
+      class="toast-container position-fixed top-0 end-0 p-3"
+      style="z-index: 2000"
+    >
+      <!-- Toasts injected here -->
+    </div>
     <div class="container">
       <!-- wrapper to make the navbars sticky-->
       <div class="sticky-stack sticky-top">
@@ -24,5 +30,7 @@
     </div>
     <!-- This Help modal is available to all routes-->
     <%- include('../partials/siteHelpModal') %>
+    <!-- This toast script is available everywhere-->
+    <%- include('../partials/toast') %>
   </body>
 </html>

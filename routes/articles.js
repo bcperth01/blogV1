@@ -102,40 +102,114 @@ let blankArticle = {
   published: "unpublished", // default 'unpublished' | 'pending' | 'published'
   deleted: false, // true if flagged for deletion
   title_image: "", // The name of an image in the bucket/cards directory
-  // likes: 0, // no of likes default 0
-  // views: 0, // no of vieww default 0
+  likes: 0, // no of likes default 0
+  views: 0, // no of vieww default 0
 };
 
-/* File->save after editing a new file (save) or an existing one (update) */
-router.post("/saveArticle", express.json(), async (req, res) => {
-  const { title, title_image, tag_list, description, markdown, path } =
+/* File->save 
+    Handles saving of new files as well as existing files
+    Note: This is called as an AJAX call, and so returns to the client Javascript
+    which is able to show success/fail messages/toasts and redirect afterwards
+    This is different from a form submittal, where control remains with the server.
+*/
+router.post("/saveArticle", async (req, res) => {
+  const { title, description, tag_list, title_image, markdown, path, id } =
     req.body;
+  // Note: path is a hidden field in the edit form - this path is the path that called the API
+  //       Also the current path "/saveArtice" is in req.path
 
-  console.log("title:      ", title);
-  console.log("tag_image:  ", title_image);
-  console.log("tag_list:   ", tag_list);
-  console.log("description:", description);
-  console.log("markdown:   ", markdown);
+  const slug = slugify(title, {
+    lower: true,
+    strict: true,
+  });
+
+  console.log("slug:      ", slug);
   console.log("path:       ", path);
 
-  if (!path) {
-    return res.status(400).json({
-      success: false,
-      message: "Missing path",
-    });
-  }
-
-  const isNewFile = path === "new" || path.startsWith("articles/new");
-
-  if (isNewFile) {
+  // Check if its a new file
+  if (path === "new" || path.startsWith("/articles/new")) {
     console.log("Creating new file...");
     // create new article logic here
-  } else {
-    console.log("Updating existing file:", path);
-    // update existing article logic here
-  }
+    // first make sure the title is unique
+    let sql = `
+      SELECT id 
+      FROM articles 
+      WHERE slug = $1
+      LIMIT 1
+    `;
+    const checkResult = await pg_pool.query(sql, [slug]);
+    if (checkResult.rows.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: `Article title already exists: "${title}"`,
+      });
+    }
+    // save new article
+    let newArticle = { ...blankArticle };
+    newArticle.title = title.trim();
+    newArticle.description = description.trim();
+    newArticle.tag_list = tag_list.trim();
+    newArticle.title_image = title_image.trim();
+    newArticle.user_id = req.user.id;
+    newArticle.author = req.user.username;
+    newArticle.markdown = removeDollarDollar(
+      markdown.trim(),
+      "${newArticle.markdown}"
+    );
+    newArticle.slug = slug;
 
-  res.json({ success: true });
+    // create the insert fields dynamically
+    const keys = Object.keys(newArticle);
+    const values = Object.values(newArticle);
+    const placeholders = keys.map((_, i) => `$${i + 1}`).join(", ");
+
+    sql = `
+      INSERT INTO articles (${keys.join(", ")})
+      VALUES (${placeholders})
+      RETURNING *
+    `;
+
+    try {
+      // run the insert command
+      const result = await pg_pool.query(sql, values);
+      console.log("Result", result.rows[0]);
+      res.json({ success: true, slug: newArticle.slug }); // return to the client
+    } catch (error) {
+      console.log("error", error);
+      res.status(500).json({
+        success: false,
+        message: "Server error while saving new article.",
+      });
+    }
+  } else {
+    // Saving changes to an existing file
+    console.log("Updating existing file:", path, "id", id);
+    ///Now change the fields that could have been edited and their derived fields
+
+    // This is for the preview pane
+    const markdownWithImages = await replaceMarkdownImagesInPreview(
+      markdown.trim()
+    );
+
+    let cleanMarkdown = removeDollarDollar(markdown.trim(), "${markdown}");
+    // console.log("editArticle", editedArticle);
+    // save the changes
+    try {
+      const saveResult = await pg_pool.query(
+        `UPDATE articles \
+         SET slug = '${slug}', tag_list = '${tag_list.trim()}',title = '${title.trim()}', title_image = '${title_image.trim()}',\
+             description = '${description.trim()}', markdown = $$${cleanMarkdown}$$\
+         WHERE id ='${id}'`
+      );
+      res.json({ success: true, slug }); // return to the client
+    } catch (error) {
+      console.log("error", error);
+      res.status(500).json({
+        success: false,
+        message: "Server error while saving article edits.",
+      });
+    }
+  }
 });
 
 // Route for full text search for matcheing articles
@@ -150,7 +224,7 @@ router.post("/saveArticle", express.json(), async (req, res) => {
 //            phraseto_query() - inserts '<->' between words if no legal separator exists - also removes illegal separators (like '***' say)
 //            websearch_to_tsquery() which behaves like standard browser searches
 //
-router.post("/search", async (req, res) => {
+router.get("/search", async (req, res) => {
   console.log("im searching");
   console.log("searchCriteria", req.body.searchCriteria);
   let sql = `select * from articles where to_tsvector(markdown || ' ' || author || ' ' || slug || ' ' || title) @@ to_tsquery('${req.body.searchCriteria}') and published = 'unpublished'`;
@@ -216,6 +290,7 @@ router.get("/new", (req, res) => {
 // On form submission, req.body will contain the form contents
 // Security: Only logged in users who are either admin or members can create new articles
 //           TODO: Block members from editing articles they did not create.
+/*
 router.post("/new", async (req, res) => {
   if (
     !(
@@ -269,7 +344,7 @@ router.post("/new", async (req, res) => {
     res.render("articles/new", { article: newArticle, res: res.locals }); // renders "/views/articles/new.ejs" - the new article form, which should show the values already entered
   }
 });
-
+*/
 // Does a PUT to /articles/:id to update an existing article
 // On form submission, req.body will contain the form contents
 /**
@@ -290,9 +365,10 @@ router.post("/new", async (req, res) => {
  *
  *
  */
-// Security: Only logged in users who are either admin or members can create new articles
+// Security: Only logged in users who are either admin or members can edit articles
 //           TODO: Block members from editing articles they did not create.
-router.put("/:id", async (req, res, next) => {
+/*
+router.put("/edit:id", async (req, res, next) => {
   if (
     !(
       req.isAuthenticated() &&
@@ -361,7 +437,7 @@ router.put("/:id", async (req, res, next) => {
     return;
   }
 });
-
+*/
 // Delete an article from the Home page list
 // Security: Only logged in users who are either admin or members can delete articles
 //           TODO: Block members from deleting articles they did not create.
@@ -388,7 +464,7 @@ router.delete("/delete", async (req, res) => {
 
   try {
     console.log("deleting article:", req.body.slug);
-    // Mark teh article as deleted
+    // Mark the article as deleted
     const saveResult = await pg_pool.query(
       `UPDATE articles \
          SET deleted = true
@@ -406,7 +482,7 @@ router.delete("/delete", async (req, res) => {
 
 // Display the list of article cards based on various filters
 // Security: TODO: Review this page and add security where needed
-router.get("/", async (req, res) => {
+router.get("/cards", async (req, res) => {
   let filter = req.query.filter;
   console.log("filter:", filter); // its user_id by default
   let query = "";

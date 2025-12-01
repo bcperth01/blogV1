@@ -9,6 +9,8 @@
     <div class="border"><%-article.sanitisedHtml%></div>
   </div>
 </div>
+<!-- Delete (Article) Confirmation Modal -->
+<%- include('../../partials/deleteArticleModal') %>
 
 <!-- Context Menu for right click editing options -->
 <script>
@@ -118,8 +120,7 @@
   });
 </script>
 
-<!-- handling edit changes and saving  -->
-<% if (path.startsWith("/articles")) { %>
+<!-- save edit changes and new files  -->
 <script>
   const status = document.getElementById("status");
   const saveBtn = document.getElementById("menuSave");
@@ -176,11 +177,20 @@
 
   // --- SAVE HANDLER ---
   saveBtn.addEventListener("click", async () => {
+    // check the form validations
+    // built-in browser form validation
+    const form = document.getElementById("editForm");
+    if (!form.reportValidity()) {
+      // browser shows built-in validation tooltips
+      console.log("Form is not valid… aborting Save");
+      return;
+    }
+    console.log("Form is valid… continue saving");
     // COLLECT ALL FIELD VALUES INTO AN OBJECT
     const payload = {};
     fields.forEach((f) => (payload[f.name] = f.value));
 
-    console.log("payload", payload);
+    console.log("payload in Save click handler", payload);
 
     saveBtn.disabled = true;
     status.style.opacity = 1;
@@ -203,10 +213,29 @@
       if (!data.success)
         throw new Error(data.message || "Unknown server error");
 
-      // SUCCESS
+      // RESET ORIGINAL VALUES
+      fields.forEach((f) => (originalValues[f.id] = f.value));
+      isDirty = false;
+
+      //SUCCESS NOTIFICATION
       status.textContent = "Saved successfully!";
       status.style.color = "green";
+      //FADE OUT SUCCESS MESSAGE
+      setTimeout(() => {
+        status.style.transition = "opacity 1s";
+        status.style.opacity = 0;
+      }, 1500);
 
+      // redirect the user to the edit screen after saving (either new file or changes)
+      setTimeout(() => {
+        window.location.href = `/articles/edit/${data.slug}`;
+      }, 1500);
+    } catch (err) {
+      status.textContent = "Error: " + err.message;
+      status.style.color = "red";
+      status.style.opacity = 1;
+    } finally {
+      saveBtn.disabled = false;
       // close the menu-drop-down
       const dropdownToggle = document.querySelector(
         '.dropdown-toggle.show, .dropdown-toggle[aria-expanded="true"]'
@@ -215,24 +244,6 @@
         const dropdown = bootstrap.Dropdown.getInstance(dropdownToggle);
         dropdown.hide();
       }
-
-      // RESET ORIGINAL VALUES
-      fields.forEach((f) => (originalValues[f.id] = f.value));
-      isDirty = false;
-
-      // FADE OUT SUCCESS MESSAGE
-      setTimeout(() => {
-        status.style.transition = "opacity 1s";
-        status.style.opacity = 0;
-      }, 3000);
-    } catch (err) {
-      status.textContent = "Error: " + err.message;
-      status.style.color = "red";
-      status.style.opacity = 1;
-    } finally {
-      saveBtn.disabled = false;
     }
   });
 </script>
-
-<% } %>

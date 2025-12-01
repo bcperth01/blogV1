@@ -150,3 +150,13 @@ An article can have many comments 1:N
 9. Make the article list into cards
 10. Add admin route to manage articles
 11. Add admin route to manage users
+
+## Routes in Articles
+
+1. post("/saveArticle") - for both new and edited existing files
+2. get("/search) - does full text search
+3. get("/new") - opens the edit form ejs with a blank article
+4. delete("/delete") - deletes an article by slug
+5. get("/cards") - displays filtered list of articles in cards
+6. get("/display:slug") - retrieves and displays one article by slug
+7. get("/edit:slug") - retrieves and edits one article by slug
