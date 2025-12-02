@@ -19,6 +19,8 @@ import {
 } from "../utills/awsS3.js";
 
 import { generateSignedUrl } from "../utills/awsS3.js";
+import { requireAuth } from "./auth.js";
+import { requireRole } from "./auth.js";
 
 const dompurify = createDomPurify(new JSDOM().window);
 
@@ -112,105 +114,109 @@ let blankArticle = {
     which is able to show success/fail messages/toasts and redirect afterwards
     This is different from a form submittal, where control remains with the server.
 */
-router.post("/saveArticle", async (req, res) => {
-  const { title, description, tag_list, title_image, markdown, path, id } =
-    req.body;
-  // Note: path is a hidden field in the edit form - this path is the path that called the API
-  //       Also the current path "/saveArtice" is in req.path
+router.post(
+  "/saveArticle",
+  requireRole("admin", "member"),
+  async (req, res) => {
+    const { title, description, tag_list, title_image, markdown, path, id } =
+      req.body;
+    // Note: path is a hidden field in the edit form - this path is the path that called the API
+    //       Also the current path "/saveArtice" is in req.path
 
-  const slug = slugify(title, {
-    lower: true,
-    strict: true,
-  });
+    const slug = slugify(title, {
+      lower: true,
+      strict: true,
+    });
 
-  console.log("slug:      ", slug);
-  console.log("path:       ", path);
+    console.log("slug:      ", slug);
+    console.log("path:       ", path);
 
-  // Check if its a new file
-  if (path === "new" || path.startsWith("/articles/new")) {
-    console.log("Creating new file...");
-    // create new article logic here
-    // first make sure the title is unique
-    let sql = `
+    // Check if its a new file
+    if (path === "new" || path.startsWith("/articles/new")) {
+      console.log("Creating new file...");
+      // create new article logic here
+      // first make sure the title is unique
+      let sql = `
       SELECT id 
       FROM articles 
       WHERE slug = $1
       LIMIT 1
     `;
-    const checkResult = await pg_pool.query(sql, [slug]);
-    if (checkResult.rows.length > 0) {
-      return res.status(409).json({
-        success: false,
-        message: `Article title already exists: "${title}"`,
-      });
-    }
-    // save new article
-    let newArticle = { ...blankArticle };
-    newArticle.title = title.trim();
-    newArticle.description = description.trim();
-    newArticle.tag_list = tag_list.trim();
-    newArticle.title_image = title_image.trim();
-    newArticle.user_id = req.user.id;
-    newArticle.author = req.user.username;
-    newArticle.markdown = removeDollarDollar(
-      markdown.trim(),
-      "${newArticle.markdown}"
-    );
-    newArticle.slug = slug;
+      const checkResult = await pg_pool.query(sql, [slug]);
+      if (checkResult.rows.length > 0) {
+        return res.status(409).json({
+          success: false,
+          message: `Article title already exists: "${title}"`,
+        });
+      }
+      // save new article
+      let newArticle = { ...blankArticle };
+      newArticle.title = title.trim();
+      newArticle.description = description.trim();
+      newArticle.tag_list = tag_list.trim();
+      newArticle.title_image = title_image.trim();
+      newArticle.user_id = req.user.id;
+      newArticle.author = req.user.username;
+      newArticle.markdown = removeDollarDollar(
+        markdown.trim(),
+        "${newArticle.markdown}"
+      );
+      newArticle.slug = slug;
 
-    // create the insert fields dynamically
-    const keys = Object.keys(newArticle);
-    const values = Object.values(newArticle);
-    const placeholders = keys.map((_, i) => `$${i + 1}`).join(", ");
+      // create the insert fields dynamically
+      const keys = Object.keys(newArticle);
+      const values = Object.values(newArticle);
+      const placeholders = keys.map((_, i) => `$${i + 1}`).join(", ");
 
-    sql = `
+      sql = `
       INSERT INTO articles (${keys.join(", ")})
       VALUES (${placeholders})
       RETURNING *
     `;
 
-    try {
-      // run the insert command
-      const result = await pg_pool.query(sql, values);
-      console.log("Result", result.rows[0]);
-      res.json({ success: true, slug: newArticle.slug }); // return to the client
-    } catch (error) {
-      console.log("error", error);
-      res.status(500).json({
-        success: false,
-        message: "Server error while saving new article.",
-      });
-    }
-  } else {
-    // Saving changes to an existing file
-    console.log("Updating existing file:", path, "id", id);
-    ///Now change the fields that could have been edited and their derived fields
+      try {
+        // run the insert command
+        const result = await pg_pool.query(sql, values);
+        console.log("Result", result.rows[0]);
+        res.json({ success: true, slug: newArticle.slug }); // return to the client
+      } catch (error) {
+        console.log("error", error);
+        res.status(500).json({
+          success: false,
+          message: "Server error while saving new article.",
+        });
+      }
+    } else {
+      // Saving changes to an existing file
+      console.log("Updating existing file:", path, "id", id);
+      ///Now change the fields that could have been edited and their derived fields
 
-    // This is for the preview pane
-    const markdownWithImages = await replaceMarkdownImagesInPreview(
-      markdown.trim()
-    );
+      // This is for the preview pane
+      const markdownWithImages = await replaceMarkdownImagesInPreview(
+        markdown.trim()
+      );
 
-    let cleanMarkdown = removeDollarDollar(markdown.trim(), "${markdown}");
-    // console.log("editArticle", editedArticle);
-    // save the changes
-    try {
-      const saveResult = await pg_pool.query(
-        `UPDATE articles \
+      let cleanMarkdown = removeDollarDollar(markdown.trim(), "${markdown}");
+      // console.log("editArticle", editedArticle);
+      // save the changes
+      try {
+        const saveResult = await pg_pool.query(
+          `UPDATE articles \
          SET slug = '${slug}', tag_list = '${tag_list.trim()}',title = '${title.trim()}', title_image = '${title_image.trim()}',\
              description = '${description.trim()}', markdown = $$${cleanMarkdown}$$\
          WHERE id ='${id}'`
-      );
-      res.json({ success: true, slug }); // return to the client
-    } catch (error) {
-      console.log("error", error);
-      res.status(500).json({
-        success: false,
-        message: "Server error while saving article edits.",
-      });
+        );
+        res.json({ success: true, slug }); // return to the client
+      } catch (error) {
+        console.log("error", error);
+        res.status(500).json({
+          success: false,
+          message: "Server error while saving article edits.",
+        });
+      }
     }
   }
-});
+);
 
 // Route for full text search for matcheing articles
 // Security: Everyone can get a list of published articles
@@ -260,25 +266,7 @@ router.get("/search", async (req, res) => {
  */
 // Reach here with /articles/new
 // Security: Only logged in users who are either admin or members can create new articles
-router.get("/new", (req, res) => {
-  if (
-    !(
-      req.isAuthenticated() &&
-      (res.locals.member_type === "admin" ||
-        res.locals.member_type === "member")
-    )
-  ) {
-    // If not authenticated or not an admin or member, redirect to unauthorised page}
-    res.redirect(
-      "/auth/unauthorised?err_msg=" +
-        encodeURIComponent("Inaccessible Route") +
-        "&title=" +
-        encodeURIComponent("Not Authorised") +
-        "&route=" +
-        encodeURIComponent("/")
-    );
-    return;
-  }
+router.get("/new", requireRole("admin", "member"), (req, res) => {
   res.render("articles/edit", {
     article: { ...blankArticle },
     heading: "New Article",
@@ -441,27 +429,7 @@ router.put("/edit:id", async (req, res, next) => {
 // Delete an article from the Home page list
 // Security: Only logged in users who are either admin or members can delete articles
 //           TODO: Block members from deleting articles they did not create.
-router.delete("/delete", async (req, res) => {
-  if (
-    !(
-      req.isAuthenticated() &&
-      (res.locals.member_type === "admin" ||
-        res.locals.member_type === "member")
-    )
-  ) {
-    // If not authenticated or not an admin or member, redirect to unauthorised page
-    return res.status(400).json({
-      unauth: true,
-      success: false,
-      message:
-        encodeURIComponent("Inaccessible Route") +
-        "&title=" +
-        encodeURIComponent("Not Authorised") +
-        "&route=" +
-        encodeURIComponent("/"),
-    });
-  }
-
+router.delete("/delete", requireRole("admin", "member"), async (req, res) => {
   try {
     console.log("deleting article:", req.body.slug);
     // Mark the article as deleted

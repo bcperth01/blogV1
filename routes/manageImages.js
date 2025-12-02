@@ -36,7 +36,9 @@ import { generateSignedUrl } from "../utills/awsS3.js";
 import express from "express";
 import sharp from "sharp"; // image processing (making thumbnails in this case)
 import multer from "multer"; // for uploading files
-
+// These are for authorising routes
+import { requireAuth } from "./auth.js";
+import { requireRole } from "./auth.js";
 // This cache avoids reloading a long list of thumbnails from s3 on every reload
 import NodeCache from "node-cache";
 const cache = new NodeCache({ stdTTL: 3600 }); // 3600 seconds = 1 hour
@@ -72,7 +74,7 @@ const BUCKET_NAME = process.env.S3_BUCKET_NAME;
 
 // Route to rotate an image - either right or left by 90deg
 // TODO: Add security
-router.post("/rotate-image", async (req, res) => {
+router.post("/rotate-image", requireAuth, async (req, res) => {
   const { key, direction, focusKey } = req.body;
 
   if (!key) return res.status(400).send("Missing image key");
@@ -189,9 +191,8 @@ function removeImageFromCache(s3Key) {
 }
 
 // Route to delete an image in both /thumbnails and /images
-// TODO. This needs to be updated to generate the right keys and do 2 deletes
-// TODO: Add security
-router.post("/delete-image", async (req, res) => {
+// Security: you must be logged in and own the image, or be a logged in admin
+router.post("/delete-image", requireAuth, async (req, res) => {
   let key = req.body.key; // will be like key thumbnails/Aus Seniors Medal.jpg
 
   if (!key) return res.status(400).send("Missing image key");
@@ -266,7 +267,7 @@ async function getImages(forceRefresh = false) {
 }
 
 // listImages2 route
-router.get("/listImages2", async (req, res) => {
+router.get("/listImages2", requireAuth, async (req, res) => {
   const filter = (req.query.filter || "").toLowerCase().trim();
   const images = await getImages(); // always returns full cached list
   const filtered = filter
@@ -286,7 +287,7 @@ router.get("/listImages2", async (req, res) => {
 
 // Endpoint to load the full image (prefix /images/ when the user clicks on the thumbnail
 // TODO: Add security
-router.get("/getImage/:key", async (req, res, next) => {
+router.get("/getImage/:key", requireAuth, async (req, res, next) => {
   const key = req.params.key;
   console.log("key", key);
 
@@ -317,7 +318,7 @@ router.get("/getImage/:key", async (req, res, next) => {
 // TODO: Add security
 // TODO: Intergrate this with the MD editor to allow embedding the selected image
 // DELETEME
-router.post("/selectImage/:key", (req, res) => {
+router.post("/selectImage/:key", requireAuth, (req, res) => {
   const key = decodeURIComponent(req.params.key);
   console.log("Selected image:", key);
 
@@ -325,120 +326,125 @@ router.post("/selectImage/:key", (req, res) => {
 });
 
 // API to upload an in image that has been drag dropped to the upload modal
-router.post("/uploadImage", upload.single("imageFile"), async (req, res) => {
-  try {
-    if (!req.file || !req.body.imageName) {
-      return res.status(400).json({ error: "Missing name or file." });
-    }
-
-    const originalName = req.body.imageName.trim();
-    const safeName = originalName + ".jpg";
-
-    if (!req.file.mimetype.startsWith("image/")) {
-      return res.status(400).json({ error: "Invalid file type." });
-    }
-
-    const fullKey = `images/${safeName}`;
-    const thumbKey = `thumbnails/${safeName}`;
-    const cardKey = `cards/${safeName}`;
-
-    // check in bucket/images if a file of that name already exists
+router.post(
+  "/uploadImage",
+  requireAuth,
+  upload.single("imageFile"),
+  async (req, res) => {
     try {
+      if (!req.file || !req.body.imageName) {
+        return res.status(400).json({ error: "Missing name or file." });
+      }
+
+      const originalName = req.body.imageName.trim();
+      const safeName = originalName + ".jpg";
+
+      if (!req.file.mimetype.startsWith("image/")) {
+        return res.status(400).json({ error: "Invalid file type." });
+      }
+
+      const fullKey = `images/${safeName}`;
+      const thumbKey = `thumbnails/${safeName}`;
+      const cardKey = `cards/${safeName}`;
+
+      // check in bucket/images if a file of that name already exists
+      try {
+        await s3.send(
+          new HeadObjectCommand({
+            Bucket: process.env.S3_BUCKET_NAME,
+            Key: fullKey,
+          })
+        );
+
+        // file already exists
+        return res.status(409).json({
+          error: "An image with that name already exists.",
+        });
+      } catch (err) {
+        console.error("HeadObject error:", {
+          name: err.name,
+          message: err.message,
+          code: err.$metadata?.httpStatusCode,
+        });
+
+        // Expected: NotFound / 404
+        if (err.$metadata && err.$metadata.httpStatusCode === 404) {
+          // OK → safe to continue uploading
+        } else {
+          // Anything else = AWS failure
+          return res.status(500).json({
+            error: "Unable to check existing objects.",
+            details: err.message,
+          });
+        }
+      }
+
+      // Create images, thumbnails and cards versions
+      const thumbBuffer = await sharp(req.file.buffer)
+        .resize(200)
+        .jpeg({ quality: 80 })
+        .toBuffer();
+
+      const cardBuffer = await sharp(req.file.buffer)
+        .resize(400)
+        .jpeg({ quality: 80 })
+        .toBuffer();
+
+      const imageBuffer = await sharp(req.file.buffer)
+        .resize(3096)
+        .jpeg({ quality: 80 })
+        .toBuffer();
+
+      // Upload images version
       await s3.send(
-        new HeadObjectCommand({
+        new PutObjectCommand({
           Bucket: process.env.S3_BUCKET_NAME,
           Key: fullKey,
+          Body: imageBuffer,
+          ContentType: "image/jpeg",
         })
       );
 
-      // file already exists
-      return res.status(409).json({
-        error: "An image with that name already exists.",
+      // Upload thumbnails version
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: process.env.S3_BUCKET_NAME,
+          Key: thumbKey,
+          Body: thumbBuffer,
+          ContentType: "image/jpeg",
+        })
+      );
+
+      // Upload cards version
+      await s3.send(
+        new PutObjectCommand({
+          Bucket: process.env.S3_BUCKET_NAME,
+          Key: cardKey,
+          Body: cardBuffer,
+          ContentType: "image/jpeg",
+        })
+      );
+
+      // Insert the new image in the cache
+      let list = cache.get("s3_images") || [];
+
+      // Add the new image to the cache
+      list.push({
+        key: thumbKey,
+        title: thumbKey.split("/").pop(),
+        url: await generateSignedUrl(thumbKey),
       });
+
+      cache.set("s3_images", list);
+
+      //Respond success
+      res.json({ success: true });
     } catch (err) {
-      console.error("HeadObject error:", {
-        name: err.name,
-        message: err.message,
-        code: err.$metadata?.httpStatusCode,
-      });
-
-      // Expected: NotFound / 404
-      if (err.$metadata && err.$metadata.httpStatusCode === 404) {
-        // OK → safe to continue uploading
-      } else {
-        // Anything else = AWS failure
-        return res.status(500).json({
-          error: "Unable to check existing objects.",
-          details: err.message,
-        });
-      }
+      console.error("Upload error:", err);
+      res.status(500).json({ error: "Upload failed." });
     }
-
-    // Create images, thumbnails and cards versions
-    const thumbBuffer = await sharp(req.file.buffer)
-      .resize(200)
-      .jpeg({ quality: 80 })
-      .toBuffer();
-
-    const cardBuffer = await sharp(req.file.buffer)
-      .resize(400)
-      .jpeg({ quality: 80 })
-      .toBuffer();
-
-    const imageBuffer = await sharp(req.file.buffer)
-      .resize(3096)
-      .jpeg({ quality: 80 })
-      .toBuffer();
-
-    // Upload images version
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: process.env.S3_BUCKET_NAME,
-        Key: fullKey,
-        Body: imageBuffer,
-        ContentType: "image/jpeg",
-      })
-    );
-
-    // Upload thumbnails version
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: process.env.S3_BUCKET_NAME,
-        Key: thumbKey,
-        Body: thumbBuffer,
-        ContentType: "image/jpeg",
-      })
-    );
-
-    // Upload cards version
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: process.env.S3_BUCKET_NAME,
-        Key: cardKey,
-        Body: cardBuffer,
-        ContentType: "image/jpeg",
-      })
-    );
-
-    // Insert the new image in the cache
-    let list = cache.get("s3_images") || [];
-
-    // Add the new image to the cache
-    list.push({
-      key: thumbKey,
-      title: thumbKey.split("/").pop(),
-      url: await generateSignedUrl(thumbKey),
-    });
-
-    cache.set("s3_images", list);
-
-    //Respond success
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Upload error:", err);
-    res.status(500).json({ error: "Upload failed." });
   }
-});
+);
 
 // 🕒 Automatically refresh S3 cache every 10 minutes
 // Disabling this to avoid too much S3 traffic

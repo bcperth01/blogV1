@@ -1,11 +1,14 @@
 import express from "express";
 import pg_pool from "../pgQueries/connectPool.js";
 import { createTables, dropTables } from "../pgQueries/createTables.js";
+// These are for authorising routes
+import { requireAuth } from "./auth.js";
+import { requireRole } from "./auth.js";
 
 const router = express.Router();
 
 // Test to see if postgres is running and connected - route /admin/testPG
-router.get("/testPG", async (req, res) => {
+router.get("/testPG", requireRole("Admin"), async (req, res) => {
   try {
     const result = await pg_pool.query("SELECT current_database()");
     res.send(`The current database is "${result.rows[0].current_database}"`);
@@ -20,7 +23,7 @@ router.get("/testPG", async (req, res) => {
 });
 
 // Once off route used for setup
-router.get("/createTables", async (req, res) => {
+router.get("/createTables", requireRole("Admin"), async (req, res) => {
   try {
     const result = await createTables();
     res.send(result);
@@ -33,7 +36,7 @@ router.get("/createTables", async (req, res) => {
 });
 
 // Once off route used for setup
-router.get("/dropTables", async (req, res) => {
+router.get("/dropTables", requireRole("Admin"), async (req, res) => {
   try {
     const result = await dropTables();
     res.send(result);
