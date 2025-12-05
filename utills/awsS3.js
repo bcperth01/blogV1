@@ -113,7 +113,7 @@ export async function replaceMarkdownImages(markdown) {
     });
   }
 
-  console.log("replacements", replacements);
+  // console.log("replacements", replacements);
   return replacements;
 }
 

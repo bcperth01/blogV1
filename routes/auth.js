@@ -10,9 +10,13 @@ const router = express.Router();
 
 const badLoginMessage = "Incorrect username or password";
 
-// These are hand coded functions for checking if user is logged in and their role
-// used the apply the correct authorisation to each api endpoint
-// Note:
+// The next 3 are authorisation middle ware that can be attached to any route
+// requireAuth()    where the user must be logged in to access the route
+// requireNotAuth() where the user must NOT be logged in to access the route (like login and regiser)
+// requireRole()    where the user must be logged in and have a specific role
+// requireNoUnPublished() where the user should not see unpublished articles he does not own
+
+// requireAuth() where the user must be logged in to access the route
 export function requireAuth(req, res, next) {
   if (!req.isAuthenticated()) {
     // return res.status(401).json({ error: "Not authenticated" });
@@ -28,7 +32,7 @@ export function requireAuth(req, res, next) {
   next();
 }
 
-// this is for routes like login, where you must not be already logged in
+// requireNotAuth() where the user must NOT be logged in to access the route (like login and regiser)
 export function requireNotAuth(req, res, next) {
   if (req.isAuthenticated()) {
     // return res.status(401).json({ error: "Not authenticated" });
@@ -44,10 +48,9 @@ export function requireNotAuth(req, res, next) {
   next();
 }
 
-// This is for routes where you must be logged in a have a specific role
+// requireRole()    where the user must be logged in and have a specific role
 export function requireRole(...allowedTypes) {
   return function (req, res, next) {
-    console.log("role in requireRole:", res.locals.member_type);
     if (!req.isAuthenticated()) {
       return res.redirect(
         "/auth/unauthorised?err_msg=" +
@@ -72,6 +75,103 @@ export function requireRole(...allowedTypes) {
     next();
   };
 }
+
+// requireOwner() where the user should not be able to edit articles he does not own
+// User must be logged in and own the file or be an admin
+export async function requireOwner(req, res, next) {
+  if (!req.isAuthenticated()) {
+    return res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("You are not authorised for this page") +
+        "&title=" +
+        encodeURIComponent("Not Authorised") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
+  }
+  const result = await pg_pool.query(
+    `SELECT * from articles where slug ='${req.params.slug}'`
+  );
+
+  if (result.rows.length === 0) {
+    return res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("Document not found") +
+        "&title=" +
+        encodeURIComponent("Document deleted or never existed") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
+  }
+  const article = result.rows[0];
+  if (!res.locals.member_type === "admin" || req.id !== article.user_d) {
+    return res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("Not Authorised") +
+        "&title=" +
+        encodeURIComponent(
+          "You are not allowed to edit articles you dont own"
+        ) +
+        "&route=" +
+        encodeURIComponent("/")
+    );
+  }
+  res.article = article;
+  next();
+}
+
+// requireNoUnPublished() where the user should not see unpublished articles he does not own
+// If the user is not logged in he can see published articles
+// If the user is logged in he can see his own unpublished articles, and admin can see all articles
+// Note: The article's slug will be passed in the params in routes where this auth fun is used
+// Note: to check if authorised we have to read the article so that is passed back in req.article
+export async function requireNoUnpublished(req, res, next) {
+  if (!req.params && !req.params.slug) {
+    // should never reach here
+    next();
+  }
+  const result = await pg_pool.query(
+    `SELECT * from articles where slug ='${req.params.slug}'`
+  );
+  if (result.rows.length === 0) {
+    return res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("Document not found") +
+        "&title=" +
+        encodeURIComponent("Document deleted or never existed") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
+  }
+  const article = result.rows[0];
+  console.log("published:", article.published);
+  console.log("user_id", article.user_id);
+  console.log("logged in user", res.locals);
+  if (!req.isAuthenticated() && article.published !== "published") {
+    return res.redirect(
+      "/auth/unauthorised?err_msg=" +
+        encodeURIComponent("Not Authorised") +
+        "&title=" +
+        encodeURIComponent("You have no access to unpublished documents") +
+        "&route=" +
+        encodeURIComponent("/")
+    );
+  } else {
+    if (!res.locals.member_type === "admin" || req.id !== article.user_d) {
+      return res.redirect(
+        "/auth/unauthorised?err_msg=" +
+          encodeURIComponent("Not Authorised") +
+          "&title=" +
+          encodeURIComponent("You have no access to unpublished documents") +
+          "&route=" +
+          encodeURIComponent("/")
+      );
+    }
+  }
+  req.article = article; // return found article to the route
+  next();
+}
+
 // end authorisation functions
 
 //TDDO: move this to a utility module within auth

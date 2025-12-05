@@ -21,6 +21,8 @@ import {
 import { generateSignedUrl } from "../utills/awsS3.js";
 import { requireAuth } from "./auth.js";
 import { requireRole } from "./auth.js";
+import { requireNoUnpublished } from "./auth.js";
+import { requireOwner } from "./auth.js";
 
 const dompurify = createDomPurify(new JSDOM().window);
 
@@ -265,7 +267,6 @@ router.get("/search", async (req, res) => {
  *       reoute specific logic
  */
 // Reach here with /articles/new
-// Security: Only logged in users who are either admin or members can create new articles
 router.get("/new", requireRole("admin", "member"), (req, res) => {
   res.render("articles/edit", {
     article: { ...blankArticle },
@@ -274,161 +275,8 @@ router.get("/new", requireRole("admin", "member"), (req, res) => {
   }); // renders "/views/articles/edit.ejs"
 });
 
-// Reach here on "new form" submission. POST to /articles/ to save a new article
-// On form submission, req.body will contain the form contents
-// Security: Only logged in users who are either admin or members can create new articles
-//           TODO: Block members from editing articles they did not create.
-/*
-router.post("/new", async (req, res) => {
-  if (
-    !(
-      req.isAuthenticated() &&
-      (res.locals.member_type === "admin" ||
-        res.locals.member_type === "member")
-    )
-  ) {
-    // If not authenticated or not an admin or member, redirect to unauthorised page
-    res.redirect(
-      "/auth/unauthorised?err_msg=" +
-        encodeURIComponent("Inaccessible Route") +
-        "&title=" +
-        encodeURIComponent("Not Authorised") +
-        "&route=" +
-        encodeURIComponent("/")
-    );
-    return;
-  }
-  console.log("req.body", req.body);
-  let newArticle = { ...blankArticle };
-  newArticle.title = req.body.title.trim();
-  newArticle.description = req.body.description.trim();
-  newArticle.tag_list = req.body.tag_list.trim();
-  newArticle.title_image = req.body.title_image.trim();
-  newArticle.markdown = removeDollarDollar(
-    req.body.markdown.trim(),
-    "${newArticle.markdown}"
-  );
-  newArticle.slug = slugify(req.body.title, {
-    lower: true,
-    strict: true,
-  });
-  console.log("newArticle", newArticle);
-
-  try {
-    const result = await pg_pool.query(
-      `INSERT INTO articles \
-          (title, slug ,tag_list, description, markdown, published,user_id,author,title_image)\
-       VALUES ('${newArticle.title}','${newArticle.slug}','${newArticle.tag_list}','${newArticle.description}',\
-               $$${newArticle.markdown}$$,'${newArticle.published}','${req.user.id}','${req.user.username}', '${newArticle.title_image}')`
-    );
-    console.log("Result", result);
-
-    newArticle.sanitisedHtml = dompurify.sanitize(
-      md.render(newArticle.markdown.trim(), { res: res.locals })
-    );
-    res.redirect(`articles/edit/${newArticle.slug}`); // for now continue editing until Cancel or Done pressed
-  } catch (error) {
-    console.log("error", error);
-    res.render("articles/new", { article: newArticle, res: res.locals }); // renders "/views/articles/new.ejs" - the new article form, which should show the values already entered
-  }
-});
-*/
-// Does a PUT to /articles/:id to update an existing article
-// On form submission, req.body will contain the form contents
-/**
- * The is a curly problem here with markdown.
- * MD can contain code blocks, which are denoted inside a string of ``` before and after the block.
- * So if your code contains strings with single quotes - like  let a = `abc` then the SQL will complain
- * because its not able to unravel the quotes.
- *   ```js
- *    let a = `abc`
- *   ```
- * You can wrap the md in $$, and then SQL will ignore all the quote confusion, and the above example works fine.
- *
- * However if the MD contains an SQL clause as below, then the markdown itself will contain the $$ delimiters internally
- * and so markdown = $$${editedArticle.markdown}$$ will cause double wrapping - again confusing SQL.
- *
- * One workaround would be to not use single quotes javascript strings - but that would stop the user from copy-pasting
- * random JA code into the markdown.
- *
- *
- */
-// Security: Only logged in users who are either admin or members can edit articles
-//           TODO: Block members from editing articles they did not create.
-/*
-router.put("/edit:id", async (req, res, next) => {
-  if (
-    !(
-      req.isAuthenticated() &&
-      (res.locals.member_type === "admin" ||
-        res.locals.member_type === "member")
-    )
-  ) {
-    // If not authenticated or not an admin or member, redirect to unauthorised page
-    res.redirect(
-      "/auth/unauthorised?err_msg=" +
-        encodeURIComponent("Inaccessible Route") +
-        "&title=" +
-        encodeURIComponent("Not Authorised") +
-        "&route=" +
-        encodeURIComponent("/")
-    );
-    return;
-  }
-  try {
-    const result = await pg_pool.query(
-      `SELECT * from articles WHERE id ='${req.params.id}'`
-    );
-    if (result.rows.length === 0) res.redirect("/");
-    let editedArticle = { ...result.rows[0] }; // The current state of the record in Postgres
-    ///Now change the fields that could have been edited and their derived fields
-
-    // This is for the preview pane
-    const markdownWithImages = await replaceMarkdownImagesInPreview(
-      req.body.markdown.trim()
-    );
-    editedArticle.sanitisedHtml = dompurify.sanitize(
-      md.render(markdownWithImages, { res: res.locals })
-    );
-
-    editedArticle.slug = slugify(req.body.title, {
-      lower: true,
-      strict: true,
-    });
-    editedArticle.title_image = req.body.title_image.trim();
-    editedArticle.tag_list = req.body.tag_list.trim();
-    editedArticle.title = req.body.title.trim();
-    editedArticle.description = req.body.description.trim();
-    editedArticle.markdown = removeDollarDollar(
-      req.body.markdown.trim(),
-      "${editedArticle.markdown}"
-    );
-    // console.log("editArticle", editedArticle);
-    // save the changes
-    const saveResult = await pg_pool.query(
-      `UPDATE articles \
-         SET slug = '${editedArticle.slug}', tag_list = '${editedArticle.tag_list}',title = '${editedArticle.title}', title_image = '${editedArticle.title_image}',\
-             description = '${editedArticle.description}', markdown = $$${editedArticle.markdown}$$\
-         WHERE id ='${req.params.id}'`
-    );
-
-    res.render("articles/edit", {
-      article: editedArticle,
-      heading: "Edit New Article",
-      res: res.locals,
-    });
-  } catch (err) {
-    console.log("error", err);
-    res.redirect(
-      "/error/An Update Error Has Occurred in route %2Farticles%2F:id PUT"
-    );
-    return;
-  }
-});
-*/
 // Delete an article from the Home page list
-// Security: Only logged in users who are either admin or members can delete articles
-//           TODO: Block members from deleting articles they did not create.
+// Must be logged in and either admin or member who owns the file
 router.delete("/delete", requireRole("admin", "member"), async (req, res) => {
   try {
     console.log("deleting article:", req.body.slug);
@@ -536,23 +384,16 @@ router.get("/cards", async (req, res) => {
 // Display an article in detail by pressing "Read More..""
 // Security: Prevent non admin users from accessing unpublished articles, that dont belong to them
 // Note: Currentlty retrieving all articles matching the slug and displayig the first (this is not right)
-router.get("/display/:slug", async (req, res) => {
-  console.log("req.params.slug", req.params.slug);
+router.get("/display/:slug", requireNoUnpublished, async (req, res) => {
+  console.log("req.params", req.params);
   try {
-    const result = await pg_pool.query(
-      `SELECT * from articles where slug ='${req.params.slug}'`
-    );
-    if (result.rows.length === 0) {
-      console.log("document with slug ", req.params.slug, "not found");
-      res.redirect("/");
-      return;
-    }
-    let article = result.rows[0];
+    let article = req.article;
+    console.log("article", article);
 
     // update the views (no of times the page was accessed)
-    const updatedViews = result.rows[0].views + 1;
+    const updatedViews = article.views + 1;
     await pg_pool.query(
-      `UPDATE articles set views ='${updatedViews}' where id = '${result.rows[0].id}'`
+      `UPDATE articles set views ='${updatedViews}' where id = '${article.id}'`
     );
     article.views = updatedViews;
 
@@ -590,26 +431,26 @@ router.get("/display/:slug", async (req, res) => {
 
     // Replace the image references with the signed URLS
     replacements.forEach(({ original, thumbnailSignedUrl, imageSignedUrl }) => {
-      console.log("before HTML", article.sanitisedHtml);
-      console.log("original", original);
-      console.log("---------------------------------------------");
-      console.log("thumbnailSignedUrl", thumbnailSignedUrl);
-      console.log("---------------------------------------------");
-      console.log("iamgeSignedUrl", imageSignedUrl);
+      // console.log("before HTML", article.sanitisedHtml);
+      // console.log("original", original);
+      // console.log("---------------------------------------------");
+      // console.log("thumbnailSignedUrl", thumbnailSignedUrl);
+      // console.log("---------------------------------------------");
+      // console.log("iamgeSignedUrl", imageSignedUrl);
       const replacement =
         "<img src=" +
         thumbnailSignedUrl +
         " data-full=" +
         imageSignedUrl +
         " style=max-width: 100%; border-radius: 8px; margin: 20px 0>";
-      console.log("---------------------------------------------");
-      console.log("replacement", replacement);
+      // console.log("---------------------------------------------");
+      // console.log("replacement", replacement);
       article.sanitisedHtml = article.sanitisedHtml.replace(
         escapeEntitiesInMarkdownUrl(original),
         replacement
       );
-      console.log("---------------------------------------------");
-      console.log("after", article.sanitisedHtml);
+      // console.log("---------------------------------------------");
+      // console.log("after", article.sanitisedHtml);
     });
 
     // render the article
@@ -627,8 +468,8 @@ router.get("/display/:slug", async (req, res) => {
 // -by pressing the "edit" button on a card or
 // -by selecting file->edit menu item that appeard when a file is being displayed
 //
-// Security: Prevent non admin users from editing articles that dont belong to them
-router.get("/edit/:slug", async (req, res) => {
+// Security: User must be logged in and own the file or be an admin
+router.get("/edit/:slug", requireOwner, async (req, res) => {
   console.log("in /edit the path is:", req.path);
   try {
     const result = await pg_pool.query(
