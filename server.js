@@ -143,8 +143,6 @@ app.use("/setup", setupRouter);
 app.use("/admin", adminRouter);
 app.use("/manageImages", manageImagesRouter);
 
-// Home Page redirected - because its implemented as an article
-// Security: None needed as its a public home page
 app.get("/", async (req, res, next) => {
   res.redirect("/home");
 });

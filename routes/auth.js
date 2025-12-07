@@ -76,9 +76,10 @@ export function requireRole(...allowedTypes) {
   };
 }
 
-// requireOwner() where the user should not be able to edit articles he does not own
+// requireOwner() where the user should not be able to edit/delete articles he does not own
 // User must be logged in and own the file or be an admin
 export async function requireOwner(req, res, next) {
+  console.log("res.locals in requireOwner", res.locals);
   if (!req.isAuthenticated()) {
     return res.redirect(
       "/auth/unauthorised?err_msg=" +
@@ -104,7 +105,11 @@ export async function requireOwner(req, res, next) {
     );
   }
   const article = result.rows[0];
-  if (!res.locals.member_type === "admin" || req.id !== article.user_d) {
+  console.log("Article owner", article.user_id);
+  if (
+    !res.locals.member_type === "admin" ||
+    res.locals.id !== article.user_id
+  ) {
     return res.redirect(
       "/auth/unauthorised?err_msg=" +
         encodeURIComponent("Not Authorised") +
@@ -116,7 +121,7 @@ export async function requireOwner(req, res, next) {
         encodeURIComponent("/")
     );
   }
-  res.article = article;
+  req.article = article;
   next();
 }
 

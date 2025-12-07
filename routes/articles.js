@@ -68,7 +68,7 @@ const md = markdownit({
     if (lang && hljs.getLanguage(lang)) {
       try {
         return (
-          '<pre><code class="hljs">' +
+          '<pre class="hljs"><code>' +
           hljs.highlight(str, { language: lang }).value +
           "</code></pre>"
         );
@@ -79,9 +79,11 @@ const md = markdownit({
         return;
       }
     }
-    console.log("No Language set");
+    console.log("No Language set in markdown - default javascript");
     return (
-      '<pre><code class="hljs">' + md.utils.escapeHtml(str) + "</code></pre>"
+      '<pre class="hljs"><code>' +
+      hljs.highlight(str, { language: "javascript" }).value +
+      "</code></pre>"
     );
   },
 });
@@ -114,7 +116,7 @@ let blankArticle = {
     Handles saving of new files as well as existing files
     Note: This is called as an AJAX call, and so returns to the client Javascript
     which is able to show success/fail messages/toasts and redirect afterwards
-    This is different from a form submittal, where control remains with the server.
+    This is different from a form submittal, where the server route does the redirecting
 */
 router.post(
   "/saveArticle",
@@ -133,19 +135,24 @@ router.post(
     console.log("slug:      ", slug);
     console.log("path:       ", path);
 
+    // Attempt to read the article - should be either none (if new) or only 1 (if existing)
+    let articles = await pg_pool.query(
+      `
+      SELECT id, user_id
+      FROM articles
+      WHERE slug = $1
+    `,
+      [slug]
+    );
+
+    // **************************
     // Check if its a new file
+    // **************************
     if (path === "new" || path.startsWith("/articles/new")) {
       console.log("Creating new file...");
       // create new article logic here
       // first make sure the title is unique
-      let sql = `
-      SELECT id 
-      FROM articles 
-      WHERE slug = $1
-      LIMIT 1
-    `;
-      const checkResult = await pg_pool.query(sql, [slug]);
-      if (checkResult.rows.length > 0) {
+      if (articles.rows.length > 0) {
         return res.status(409).json({
           success: false,
           message: `Article title already exists: "${title}"`,
@@ -189,14 +196,35 @@ router.post(
         });
       }
     } else {
+      // **********************************
       // Saving changes to an existing file
+      // **********************************
+      // check that the owner of the file matches the logged in user or is the admin
+      // Note: This should be done in middleware - buat after refactor to make split this route
+      // into separate /edit and /new routes
+      console.log(res.locals);
+      if (
+        res.locals.member_type !== "admin" &&
+        articles.rows[0].user_id !== res.locals.id
+      ) {
+        return res.redirect(
+          "/auth/unauthorised?err_msg=" +
+            encodeURIComponent("Not Authorised") +
+            "&title=" +
+            encodeURIComponent(
+              "You are not allowed to edit articles you dont own"
+            ) +
+            "&route=" +
+            encodeURIComponent("/")
+        );
+      }
       console.log("Updating existing file:", path, "id", id);
       ///Now change the fields that could have been edited and their derived fields
 
-      // This is for the preview pane
-      const markdownWithImages = await replaceMarkdownImagesInPreview(
-        markdown.trim()
-      );
+      // // This is for the preview pane
+      // const markdownWithImages = await replaceMarkdownImagesInPreview(
+      //   markdown.trim()
+      // );
 
       let cleanMarkdown = removeDollarDollar(markdown.trim(), "${markdown}");
       // console.log("editArticle", editedArticle);
@@ -264,7 +292,7 @@ router.get("/search", async (req, res) => {
 /**
  * Note: The same for is used to edit new or existing articles
  *       The path variable contains either "/articles/new" or "/articles/edit" to direct any
- *       reoute specific logic
+ *       route specific logic
  */
 // Reach here with /articles/new
 router.get("/new", requireRole("admin", "member"), (req, res) => {
@@ -277,7 +305,7 @@ router.get("/new", requireRole("admin", "member"), (req, res) => {
 
 // Delete an article from the Home page list
 // Must be logged in and either admin or member who owns the file
-router.delete("/delete", requireRole("admin", "member"), async (req, res) => {
+router.delete("/delete", requireOwner, async (req, res) => {
   try {
     console.log("deleting article:", req.body.slug);
     // Mark the article as deleted
@@ -467,16 +495,11 @@ router.get("/display/:slug", requireNoUnpublished, async (req, res) => {
 // Reach here either:
 // -by pressing the "edit" button on a card or
 // -by selecting file->edit menu item that appeard when a file is being displayed
-//
 // Security: User must be logged in and own the file or be an admin
 router.get("/edit/:slug", requireOwner, async (req, res) => {
   console.log("in /edit the path is:", req.path);
   try {
-    const result = await pg_pool.query(
-      `SELECT * from articles where slug ='${req.params.slug}'`
-    );
-    if (result.rows.length === 0) res.redirect("/");
-    let article = result.rows[0];
+    let article = req.article; // article is returned in req by the requireOwner middleware
 
     // This is for the preview pane
     const markdownWithImages = await replaceMarkdownImagesInPreview(
